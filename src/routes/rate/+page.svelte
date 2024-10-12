@@ -5,6 +5,7 @@
 	import { getPublicKey } from "nostr-tools/pure";
 	import { relayList, relayPool } from "$lib/nostr";
 	import { decode } from "nostr-tools/nip19";
+	import { goto } from "$app/navigation";
 
 	function parseSecKey(str: string) {
 		try {
@@ -77,8 +78,8 @@
 	let mySecretKey = ""
 	let otherPersonPubKey = ""
 	let ratingDescription = ""
-	let score: boolean
-	let businessAlreadyDone: boolean
+	let score: boolean | undefined
+	let businessAlreadyDone: boolean | undefined
 
 	async function handleSubmit() {
 		if (ratingDescription.length >= 1000) 
@@ -88,14 +89,12 @@
 			return alert("You forgot to fill some checkbox")
 		
 		const mySecKey = parseSecKey(mySecretKey)
-		if (!mySecKey) return
-			alert("Invalid secret key")
+		if (!mySecKey) return alert("Invalid secret key")
 
 		const myPubkey = getPublicKey(mySecKey)
 
 		const otherPubKey = parsePubKey(otherPersonPubKey)
-		if (!otherPubKey) return
-			alert("Invalid public key")
+		if (!otherPubKey) return alert("Invalid public key")
 
 		let rating: Review = {
 			from: myPubkey,
@@ -119,7 +118,15 @@
 	
 		relayPool.publish(relayList, event)
 
-		alert("event published")
+		if (confirm("Event published. Would you like to see the ratings table?")) {
+			goto("/table")
+		}
+
+		mySecretKey = ""
+		otherPersonPubKey = ""
+		ratingDescription = ""
+		score = undefined
+		businessAlreadyDone = undefined
 	}
 </script>
 

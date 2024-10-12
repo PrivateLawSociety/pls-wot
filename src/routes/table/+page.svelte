@@ -1,19 +1,19 @@
-<script>
+<script lang="ts">
 	import { ReviewEvent } from "$lib";
 	import { relayList, relayPool } from "$lib/nostr";
 	import { npubEncode } from "nostr-tools/nip19";
 	import { onMount } from "svelte";
 
-	let ratings = [
-		{
-			from: "test from",
-			to: "test to",
-			date: Date.now(),
-			score: false,
-			businessAlreadyDone: true,
-			description: "test description"
-		},
-	]
+	let ratings: {
+		from: string;
+		to: string;
+		date: number;
+		score: boolean;
+		businessAlreadyDone: boolean;
+		description: string;
+	}[] = []
+	
+	$: ratings.sort((a, b) => b.date - a.date)
 
 	onMount(() => {
 		relayPool.subscribeMany(relayList, [{kinds: [ReviewEvent]}], {
@@ -32,7 +32,6 @@
 			}
 		})
 	})
-
 </script>
 
 <div class="flex items-center flex-col gap-8">
