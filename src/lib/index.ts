@@ -1,4 +1,4 @@
-const EphemeralTestEvent = 23456;
-// const ReplaceableTestEvent = 34567
+// const EphemeralTestEvent = 23456;
+const ReplaceableTestEvent = 30078
 
-export const ReviewEvent = EphemeralTestEvent;
+export const ReviewEvent = ReplaceableTestEvent;
