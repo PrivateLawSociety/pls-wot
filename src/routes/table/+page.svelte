@@ -35,7 +35,7 @@
 </script>
 
 <div class="flex items-center flex-col gap-8">
-	<h1 class="text-2xl font-bold">Ratings table (Currently using ephemeral events)</h1>
+	<h1 class="text-2xl font-bold">Ratings table (Currently using replaceable events)</h1>
 
 	<table>
 		<tr>
