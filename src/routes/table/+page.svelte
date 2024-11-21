@@ -16,7 +16,10 @@
 	$: ratings.sort((a, b) => b.date - a.date)
 
 	onMount(() => {
-		relayPool.subscribeMany(relayList, [{kinds: [ReviewEvent]}], {
+		relayPool.subscribeMany(relayList, [{
+			kinds: [ReviewEvent],
+			"#l": ["pls-wot-rating"]
+		}], {
 			onevent(e) {
 				try {
 					const c = JSON.parse(e.content)
