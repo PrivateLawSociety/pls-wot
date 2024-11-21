@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { ReviewEvent } from "$lib";
-	import { finalizeEvent } from "nostr-tools"
 
 	import { getPublicKey } from "nostr-tools/pure";
-	import { broadcastToNostr, relayList, relayPool } from "$lib/nostr";
+	import { broadcastToNostr } from "$lib/nostr";
 	import { decode } from "nostr-tools/nip19";
 	import { goto } from "$app/navigation";
 	import { nostrAuth } from "$lib/nostr";
@@ -101,8 +100,13 @@
 			return alert("You forgot to fill some checkbox")
 
 		const mySecKey = parseSecKey(mySecretKey)
-		if (!mySecKey && !nostrAuth) return alert("Invalid secret key")
 
+		if (mySecKey) {
+			nostrAuth.loginWithPrivkey(bufToHexString(mySecKey))
+		}
+		
+		if (!nostrAuth) return alert("Invalid secret key")
+		
 		const myPubkey = !!nostrAuth ? nostrAuth.getPubkey()! : getPublicKey(mySecKey!)
 
 		const otherPubKey = parsePubKey(otherPersonPubKey)
@@ -117,8 +121,10 @@
 			description: ratingDescription,
 		};
 
+		const labelTag = ['l', `pls-wot-rating`]
 		const dTag = ['d', `pls-wot-rating-${ratedPubKey}`]
-		const event = await nostrAuth.makeEvent(ReviewEvent, JSON.stringify(rating), [dTag])
+		const event = await nostrAuth.makeEvent(ReviewEvent, JSON.stringify(rating), [labelTag, dTag])
+
 		// const event = finalizeEvent({
 		// 		content: JSON.stringify(rating),
 		// 		created_at: Math.floor(Date.now() / 1000),
@@ -165,7 +171,7 @@
 		</a>
 
 		<label class="flex flex-col w-1/2">
-			Your secret key (hex)
+			Your secret key
 			<input class="border-2" bind:value={mySecretKey} type="text" >
 		</label>
 	{/if}
@@ -181,7 +187,7 @@
 	{/if}
 
 	<label class="flex flex-col w-1/2">
-		Other person pubkey (hex)
+		Other person pubkey
 		<input class="border-2" bind:value={otherPersonPubKey} type="text" />
 	</label>
 

@@ -1,13 +1,11 @@
-import { browser } from '$app/environment';
+import { Buffer } from 'buffer';
 import {
-	getEventHash,
 	getPublicKey,
 	SimplePool,
 	type Event,
 	generateSecretKey,
 	nip04,
-	finalizeEvent,
-	type VerifiedEvent
+	finalizeEvent
 } from 'nostr-tools';
 
 import { get, writable } from 'svelte/store';
@@ -34,9 +32,9 @@ export let nostrAuth = (() => {
 	const store = writable<{ privkey?: string; pubkey: string } | null>(
 		initialPrivateKey
 			? {
-				privkey: initialPrivateKey,
-				pubkey: getPublicKey(Uint8Array.from(Buffer.from(initialPrivateKey, 'hex')))
-			}
+					privkey: initialPrivateKey,
+					pubkey: getPublicKey(Uint8Array.from(Buffer.from(initialPrivateKey, 'hex')))
+				}
 			: null
 	);
 
@@ -70,12 +68,7 @@ public key: ${pubkey}`
 		return Math.floor(Date.now() / 1000);
 	}
 
-	async function makeNostrEvent(
-		privkey: string,
-		kind: number,
-		content: string,
-		tags: string[][]
-	) {
+	async function makeNostrEvent(privkey: string, kind: number, content: string, tags: string[][]) {
 		return finalizeEvent(
 			{
 				content,
@@ -156,35 +149,9 @@ public key: ${pubkey}`
 					pubkey
 				} as Event;
 
-				// blankEvent.id = getEventHash(blankEvent);
-
 				return window.nostr!.signEvent(blankEvent);
 			}
 		},
-		// getSigner() {
-		// 	const { pubkey, privkey } = get(store)!;
-
-		// 	if (privkey) {
-		// 		const ecpair = ECPair.fromPrivateKey(Buffer.from(privkey, 'hex'), {
-		// 			network: NETWORK.network
-		// 		});
-
-		// 		return ecpair;
-		// 	} else if (pubkey) {
-		// 		if (!window.nostr?.signSchnorr)
-		// 			return alert("Your extension doesn't support signing") as undefined;
-
-		// 		return {
-		// 			publicKey: Buffer.from('02' + pubkey, 'hex'),
-		// 			sign() {
-		// 				throw new Error('Signing without schnorr is not possible with the extension');
-		// 			},
-		// 			async signSchnorr(hash: Buffer) {
-		// 				return Buffer.from(await window.nostr!.signSchnorr(hash.toString('hex')), 'hex');
-		// 			}
-		// 		};
-		// 	}
-		// },
 		subscribe: store.subscribe
 	};
 })();
