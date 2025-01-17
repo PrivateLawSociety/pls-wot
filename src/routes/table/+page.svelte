@@ -1,27 +1,38 @@
 <script lang="ts">
 	import { ReviewEvent } from "$lib";
-	import { relayList, relayPool } from "$lib/nostr";
+	import { createInvoice, relayList, relayPool } from "$lib/nostr";
 	import { npubEncode } from "nostr-tools/nip19";
 	import { onMount } from "svelte";
+	import QRCode from "qrcode";
 
 	let modalIsOpen = false;
-	let zapDestination;
+	let zapDestination: HTMLInputElement;
+	
+	let invoice = ""
+	let invoiceQR = ""
 
 	function openZapModal(receiver: string) {
 		zapDestination.value = receiver;
 		modalIsOpen = true;
 	}
 
-	function createInvoice(e) {
+	function handleSubmit(e) {
 		const formData = new FormData(e.target)
 
-		const data = {};
+		const data: {
+			destination?: string;
+			message?: string;
+			amount?: number;
+		} = {};
 		for (let field of formData) {
 			const [key, value] = field;
 			data[key] = value;
 		}
 		
-		console.log(data)
+		createInvoice(data.destination, data.message, data.amount).then(async (data) => {
+			invoice = data.pr;
+			invoiceQR = await QRCode.toDataURL(invoice)
+		});
 	}
 
 	let ratings: {
@@ -74,25 +85,52 @@
 				</div>
 
 				<div class="p-4">
-					<form on:submit|preventDefault={createInvoice}>
-						<input bind:this={zapDestination} name="destination" type="hidden" required>
+					{#if invoiceQR !== ""}
+						<div class="space-y-8">
+							<div class="flex items-center justify-center">
+								<img src={invoiceQR} alt="qrcode" width="256" height="256">
+							</div>
+	
+							<div class="flex items-center justify-center gap-4 px-4">
+								<input type="text" class="bg-gray-700 text-sm text-white border border-gray-600 rounded-lg w-full p-2.5" value={invoice} readonly />
+								<!-- <span class="text-wrap truncate max-w-96">{invoice}</span> -->
+								<button type="button" class="text-white bg-gray-800 rounded-lg px-5 py-2"
+								on:click={(e) => {
+									e.target.innerHTML = "Copied";
+									navigator.clipboard.writeText(invoice)
+								}}>
+									Copy
+								</button>
+							</div>
 
-						<div class="mb-5 space-y-2">
-							<label for="amount" class="text-sm text-white mb-2">Amount:</label>
-							<input id="amount" name="amount" type="number" class="bg-gray-700 text-sm text-white placeholder-gray-400 border border-gray-600 rounded-lg w-full p-2.5" placeholder="21" min=1 required />
+							<div class="flex items-center justify-center">
+								<button type="button" class="text-white bg-gray-800 rounded-lg px-5 py-2 w-full"
+								on:click={() => (invoiceQR = "")}>
+									Return
+								</button>
+							</div>
 						</div>
-
-						<div class="mb-5 space-y-2">
-							<label for="message" class="text-sm text-white">Message:</label>
-							<textarea id="message" name="message" rows="3" class="bg-gray-700 text-sm text-white placeholder-gray-400 border border-gray-600 rounded-lg w-full p-2.5" placeholder="Leave a message..."></textarea>
-						</div>
-
-						<div class="flex items-center justify-center">
-							<button type="submit" class="text-sm text-white bg-gray-800 rounded-lg px-5 py-2 w-full">
-								Create Invoice
-							</button>
-						</div>
-					</form>
+					{:else}
+						<form on:submit|preventDefault={handleSubmit}>
+							<input bind:this={zapDestination} name="destination" type="hidden" required>
+	
+							<div class="mb-5 space-y-2">
+								<label for="amount" class="text-sm text-white mb-2">Amount:</label>
+								<input id="amount" name="amount" type="number" class="bg-gray-700 text-sm text-white placeholder-gray-400 border border-gray-600 rounded-lg w-full p-2.5" value=21 min=1 required />
+							</div>
+	
+							<div class="mb-5 space-y-2">
+								<label for="message" class="text-sm text-white">Message:</label>
+								<textarea id="message" name="message" rows="3" class="bg-gray-700 text-sm text-white placeholder-gray-400 border border-gray-600 rounded-lg w-full p-2.5" placeholder="Leave a message..."></textarea>
+							</div>
+	
+							<div class="flex items-center justify-center">
+								<button type="submit" class="text-sm text-white bg-orange-500 rounded-lg px-5 py-2 w-full">
+									Create Invoice
+								</button>
+							</div>
+						</form>
+					{/if}
 				</div>
 				
 			</div>
