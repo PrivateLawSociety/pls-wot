@@ -51,7 +51,7 @@
 							ratings = [...ratings, newRating];
 						}
 					} catch (error) {
-						console.error("Erro ao processar o evento:", error);
+						console.error("Error processing the event:", error);
 					}
 				},
 			}
