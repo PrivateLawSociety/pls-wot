@@ -8,6 +8,7 @@
 	let ZapModalComponent: ZapModal;
 
 	let ratings: {
+		eventId: string;
 		from: string;
 		to: string;
 		date: number;
@@ -34,6 +35,7 @@
 						ratings = [
 							...ratings,
 							{
+								eventId: e.id,
 								from: npubEncode(c.from),
 								to: npubEncode(c.to),
 								date: e.created_at * 1000,
@@ -80,7 +82,7 @@
 					<button
 						type="button"
 						class="rounded-lg p-2.5 text-sm text-orange-500 transition-colors hover:bg-orange-600 hover:text-white focus:ring-2 focus:ring-orange-300"
-						on:click={() => ZapModalComponent.openModal(rating.from)}
+						on:click={() => ZapModalComponent.openModal(rating.from, rating.eventId)}
 					>
 						Send Zap
 					</button>

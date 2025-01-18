@@ -172,7 +172,12 @@ export const getProfileMetadata = async (publicKey: string): Promise<Event | nul
 	}
 };
 
-export const createInvoice = async (destination: string, message: string, amount: number) => {
+export const createInvoice = async (
+	destination: string,
+	message: string,
+	amount: number,
+	eventId: string
+) => {
 	try {
 		const publicKey: string = decode(destination).data.toString();
 		const profileMetadata = await getProfileMetadata(publicKey);
@@ -189,7 +194,7 @@ export const createInvoice = async (destination: string, message: string, amount
 
 		const zapRequestEvent = makeZapRequest({
 			profile: publicKey,
-			event: null,
+			event: eventId,
 			amount: amount,
 			relays: relayList,
 			comment: message

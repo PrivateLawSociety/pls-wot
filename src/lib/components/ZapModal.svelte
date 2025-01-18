@@ -10,6 +10,7 @@
 		destination: '',
 		message: '',
 		amount: 21,
+		eventId: '',
 		invoice: '',
 		invoiceQR: ''
 	});
@@ -19,6 +20,7 @@
 		destination: string;
 		message: string;
 		amount: number;
+		eventId: string;
 		invoice: string;
 		invoiceQR: string;
 	};
@@ -28,15 +30,17 @@
 		destination: '',
 		message: '',
 		amount: 21,
+		eventId: '',
 		invoice: '',
 		invoiceQR: ''
 	};
 
-	export function openModal(receiver: string) {
+	export function openModal(receiver: string, eventId: string) {
 		modalState.set({
 			...initialState,
 			isOpen: true,
-			destination: receiver
+			destination: receiver,
+			eventId: eventId
 		});
 	}
 
@@ -46,8 +50,8 @@
 
 	async function handleSubmit() {
 		try {
-			const { destination, message, amount } = $modalState;
-			const data = await createInvoice(destination, message, amount);
+			const { destination, message, amount, eventId } = $modalState;
+			const data = await createInvoice(destination, message, amount, eventId);
 			const invoiceQR = await QRCode.toDataURL(data.pr);
 
 			modalState.update((state) => ({
