@@ -76,8 +76,14 @@
 				<td>{rating.score ? '👍' : '👎'}</td>
 				<td>{rating.businessAlreadyDone ? '👍' : '👎'}</td>
 				<td>{rating.description}</td>
-				<td>
-					<button on:click={() => ZapModalComponent.openModal(rating.from)}> Send Zap </button>
+				<td class="p-2">
+					<button
+						type="button"
+						class="rounded-lg p-2.5 text-sm text-orange-500 transition-colors hover:bg-orange-600 hover:text-white focus:ring-2 focus:ring-orange-300"
+						on:click={() => ZapModalComponent.openModal(rating.from)}
+					>
+						Send Zap
+					</button>
 				</td>
 			</tr>
 		{/each}
