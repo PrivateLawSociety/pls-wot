@@ -110,7 +110,7 @@
 			<div class="p-4">
 				{#if $modalState.invoiceQR}
 					<div class="space-y-8">
-						<div class="flex items-center justify-center">
+						<div class="flex flex-col items-center justify-center gap-4">
 							<img
 								src={$modalState.invoiceQR}
 								alt="QR code for lightning invoice"
@@ -118,6 +118,13 @@
 								height="256"
 								class="rounded-lg"
 							/>
+
+							<a
+								href={`lightning:${$modalState.invoice}`}
+								class="text-primary hover:text-secondary underline"
+							>
+								Pay with app
+							</a>
 						</div>
 
 						<div class="flex items-center justify-center gap-4 px-4">
