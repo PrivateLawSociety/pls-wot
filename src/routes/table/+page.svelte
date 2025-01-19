@@ -18,6 +18,9 @@
 	let filterRating: string = "all";
 	let filterBusiness: string = "all";
 
+	let filterFrom: string = "";
+	let filterTo: string = "";
+
 	$: filteredRatings = ratings.filter(rating => {
 		let ratingMatch = true;
 		if (filterRating === "positive") {
@@ -33,7 +36,17 @@
 			businessMatch = rating.businessAlreadyDone === false;
 		}
 
-		return ratingMatch && businessMatch;
+		let fromMatch = true;
+		if (filterFrom.trim() !== "") {
+			fromMatch = rating.from.toLowerCase().includes(filterFrom.toLowerCase());
+		}
+
+		let toMatch = true;
+		if (filterTo.trim() !== "") {
+			toMatch = rating.to.toLowerCase().includes(filterTo.toLowerCase());
+		}
+
+		return ratingMatch && businessMatch && fromMatch && toMatch;
 	});
 
 	$: ratings.sort((a, b) => b.date - a.date);
@@ -102,6 +115,16 @@
 				<option value="yes">Yes (👍)</option>
 				<option value="no">No (👎)</option>
 			</select>
+		</div>
+
+		<div class="flex flex-col">
+			<label for="filterFrom" class="font-semibold">Filter by Who Rated:</label>
+			<input id="filterFrom" bind:value={filterFrom} placeholder="Enter Rater Key" class="custom-input" />
+		</div>
+
+		<div class="flex flex-col">
+			<label for="filterTo" class="font-semibold">Filter by Who Was Rated:</label>
+			<input id="filterTo" bind:value={filterTo} placeholder="Enter Rated Key" class="custom-input" />
 		</div>
 	</div>
 
@@ -174,5 +197,24 @@
     select.custom-select option {
         background-color: #f0f4f8;
         color: #333;
+    }
+
+    input.custom-input {
+        border-radius: 1px;
+        padding: 8px;
+        background-color: #f0f4f8;
+        color: #333;
+        border: 1px solid #ccc;
+    }
+
+    input.custom-input:hover {
+        background-color: #e0e7ef;
+        border-color: #999;
+    }
+
+    input.custom-input:focus {
+        outline: none;
+        background-color: #d0dae8;
+        border-color: #666;
     }
 </style>
