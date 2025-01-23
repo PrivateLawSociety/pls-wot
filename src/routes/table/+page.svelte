@@ -86,93 +86,86 @@
 	<h1 class="text-2xl font-bold">Ratings table (Currently using replaceable events)</h1>
 
 	<div class="flex flex-wrap justify-center gap-4 w-full">
+
 		<div class="flex flex-col">
-			<label for="filterRating" class="font-semibold">Filter by Rating:</label>
-			<select id="filterRating" bind:value={filterRating} class="custom-select">
-				<option value="all">All</option>
-				<option value="positive">Positive (👍)</option>
-				<option value="negative">Negative (👎)</option>
+			<label for="filterRating" class="font-semibold mb-1">Filter by Rating:</label>
+			<select
+				id="filterRating"
+				bind:value={filterRating}
+				class="px-2 py-1 rounded border border-gray-300
+         bg-white text-black
+         focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+			>
+				<option value="all" class="text-black">All</option>
+				<option value="positive" class="text-black">Yes (👍)</option>
+				<option value="negative" class="text-black">No (👎)</option>
 			</select>
 		</div>
 
 		<div class="flex flex-col">
-			<label for="filterBusiness" class="font-semibold">Filter by Had Business:</label>
-			<select id="filterBusiness" bind:value={filterBusiness} class="custom-select">
-				<option value="all">All</option>
-				<option value="yes">Yes (👍)</option>
-				<option value="no">No (👎)</option>
+			<label for="filterBusiness" class="font-semibold mb-1">Filter by Had Business:</label>
+			<select
+				id="filterBusiness"
+				bind:value={filterBusiness}
+				class="px-2 py-1 rounded border border-gray-300
+         bg-white text-black
+         focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+			>
+				<option value="all" class="text-black">All</option>
+				<option value="yes" class="text-black">Yes (👍)</option>
+				<option value="no" class="text-black">No (👎)</option>
 			</select>
 		</div>
+
 	</div>
 
-	<table class="mt-4">
-		<thead>
-		<tr>
-			<th>Rater Nostr Key</th>
-			<th>Rated Nostr Key</th>
-			<th>Date</th>
-			<th>Rating</th>
-			<th>Had <br> business</th>
-			<th>Description</th>
-		</tr>
-		</thead>
-		<tbody>
-		{#each filteredRatings as rating}
+	<div class="overflow-x-auto w-full">
+		<table>
+			<thead>
+
 			<tr>
-				<td>{rating.from}</td>
-				<td>{rating.to}</td>
-				<td>
-					{new Date(rating.date).toLocaleDateString()}
-					<br />
-					{new Date(rating.date).toLocaleTimeString()}
-				</td>
-				<td>{rating.score ? "👍" : "👎"}</td>
-				<td>{rating.businessAlreadyDone ? "👍" : "👎"}</td>
-				<td>{rating.description}</td>
+				<th>Rater Nostr Key</th>
+				<th>Rated Nostr Key</th>
+				<th>Date</th>
+				<th>Rating</th>
+				<th>Had <br /> business</th>
+				<th>Description</th>
 			</tr>
-		{/each}
-		</tbody>
-	</table>
+
+			</thead>
+
+			<tbody>
+			{#each filteredRatings as rating}
+				<tr>
+					<td>{rating.from}</td>
+					<td>{rating.to}</td>
+					<td>
+						{new Date(rating.date).toLocaleDateString()}
+						<br />
+						{new Date(rating.date).toLocaleTimeString()}
+					</td>
+					<td>{rating.score ? "👍" : "👎"}</td>
+					<td>{rating.businessAlreadyDone ? "👍" : "👎"}</td>
+					<td>{rating.description}</td>
+				</tr>
+			{/each}
+			</tbody>
+
+		</table>
+	</div>
 </div>
 
 <style>
-    table,
-    th,
-    td {
+    table, th, td {
         border: 1px solid;
     }
 
     td {
         text-align: center;
-        padding: 8px;
     }
 
     table {
         width: 80%;
-        border-collapse: collapse;
-    }
-
-    select.custom-select {
-        border-radius: 1px;
-        padding: 8px;
-        background-color: #f0f4f8;
-        color: #333;
-        border: 1px solid #ccc;
-    }
-
-    select.custom-select:hover {
-        background-color: #e0e7ef;
-        border-color: #999;
-    }
-
-    select.custom-select:focus {
-        outline: none;
-        background-color: #d0dae8;
-        border-color: #666;
-    }
-
-    select.custom-select option {
-        background-color: #f0f4f8;
-        color: #333;
+        margin: 0 auto;
     }
 </style>
