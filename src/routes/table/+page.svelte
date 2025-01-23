@@ -28,6 +28,7 @@
 				onevent(e) {
 					try {
 						const c = JSON.parse(e.content);
+
 						const newRating = {
 							from: npubEncode(c.from),
 							to: npubEncode(c.to),
@@ -36,20 +37,18 @@
 							businessAlreadyDone: c.businessAlreadyDone,
 							description: c.description,
 						};
-
-						const existingIndex = ratings.findIndex(
-							(r) => r.from === newRating.from && r.to === newRating.to
-						);
-
-						if (existingIndex !== -1) {
-							ratings = [
-								...ratings.slice(0, existingIndex),
-								newRating,
-								...ratings.slice(existingIndex + 1),
-							];
-						} else {
-							ratings = [...ratings, newRating];
+						
+						if (ratings.find((r) => r.from === newRating.from && r.to === newRating.to)) {
+							ratings = ratings.filter((r) =>
+								!(
+									r.from === newRating.from
+									&& r.to === newRating.to
+								)
+							)
 						}
+
+						ratings = [...ratings, newRating]
+
 					} catch (error) {
 						console.error("Error processing the event:", error);
 					}
