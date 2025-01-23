@@ -17,7 +17,6 @@
 
 	let filterRating: string = "all";
 	let filterBusiness: string = "all";
-
 	let filterFrom: string = "";
 	let filterTo: string = "";
 
@@ -95,40 +94,64 @@
 	});
 </script>
 
-<div class="flex flex-col items-center gap-8 p-4">
+<div class="flex items-center flex-col gap-8">
 	<h1 class="text-2xl font-bold">Ratings table (Currently using replaceable events)</h1>
 
 	<div class="flex flex-wrap justify-center gap-4 w-full">
 		<div class="flex flex-col">
 			<label for="filterRating" class="font-semibold">Filter by Rating:</label>
-			<select id="filterRating" bind:value={filterRating} class="custom-select">
-				<option value="all">All</option>
-				<option value="positive">Positive (👍)</option>
-				<option value="negative">Negative (👎)</option>
+			<select
+				id="filterRating"
+				bind:value={filterRating}
+				class="px-2 py-1 rounded border border-gray-300 bg-white text-black
+				       focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+			>
+				<option value="all" class="text-black">All</option>
+				<option value="positive" class="text-black">Positive (👍)</option>
+				<option value="negative" class="text-black">Negative (👎)</option>
 			</select>
 		</div>
 
 		<div class="flex flex-col">
 			<label for="filterBusiness" class="font-semibold">Filter by Had Business:</label>
-			<select id="filterBusiness" bind:value={filterBusiness} class="custom-select">
-				<option value="all">All</option>
-				<option value="yes">Yes (👍)</option>
-				<option value="no">No (👎)</option>
+			<select
+				id="filterBusiness"
+				bind:value={filterBusiness}
+				class="px-2 py-1 rounded border border-gray-300 bg-white text-black
+				       focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+			>
+				<option value="all" class="text-black">All</option>
+				<option value="yes" class="text-black">Yes (👍)</option>
+				<option value="no" class="text-black">No (👎)</option>
 			</select>
 		</div>
 
 		<div class="flex flex-col">
 			<label for="filterFrom" class="font-semibold">Filter by Who Rated:</label>
-			<input id="filterFrom" bind:value={filterFrom} placeholder="Enter Rater Key" class="custom-input" />
+			<input
+				id="filterFrom"
+				bind:value={filterFrom}
+				placeholder="Enter Rater Key"
+				class="px-2 py-1 rounded border border-gray-300 bg-white text-black
+				       focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+			/>
 		</div>
 
 		<div class="flex flex-col">
 			<label for="filterTo" class="font-semibold">Filter by Who Was Rated:</label>
-			<input id="filterTo" bind:value={filterTo} placeholder="Enter Rated Key" class="custom-input" />
+			<input
+				id="filterTo"
+				bind:value={filterTo}
+				placeholder="Enter Rated Key"
+				class="px-2 py-1 rounded border border-gray-300 bg-white text-black
+				       focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+			/>
 		</div>
+
 	</div>
 
-	<table class="mt-4">
+	<table>
+
 		<thead>
 		<tr>
 			<th>Rater Nostr Key</th>
@@ -139,6 +162,7 @@
 			<th>Description</th>
 		</tr>
 		</thead>
+
 		<tbody>
 		{#each filteredRatings as rating}
 			<tr>
@@ -155,66 +179,20 @@
 			</tr>
 		{/each}
 		</tbody>
+
 	</table>
 </div>
 
 <style>
-    table,
-    th,
-    td {
+    table, th, td {
         border: 1px solid;
     }
 
     td {
         text-align: center;
-        padding: 8px;
     }
 
     table {
         width: 80%;
-        border-collapse: collapse;
-    }
-
-    select.custom-select {
-        border-radius: 1px;
-        padding: 8px;
-        background-color: #f0f4f8;
-        color: #333;
-        border: 1px solid #ccc;
-    }
-
-    select.custom-select:hover {
-        background-color: #e0e7ef;
-        border-color: #999;
-    }
-
-    select.custom-select:focus {
-        outline: none;
-        background-color: #d0dae8;
-        border-color: #666;
-    }
-
-    select.custom-select option {
-        background-color: #f0f4f8;
-        color: #333;
-    }
-
-    input.custom-input {
-        border-radius: 1px;
-        padding: 8px;
-        background-color: #f0f4f8;
-        color: #333;
-        border: 1px solid #ccc;
-    }
-
-    input.custom-input:hover {
-        background-color: #e0e7ef;
-        border-color: #999;
-    }
-
-    input.custom-input:focus {
-        outline: none;
-        background-color: #d0dae8;
-        border-color: #666;
     }
 </style>
