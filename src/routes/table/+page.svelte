@@ -150,8 +150,7 @@
 
 	</div>
 
-	<table>
-
+	<table class="w-3/4">
 		<thead>
 		<tr>
 			<th>Rater Nostr Key</th>
@@ -183,16 +182,12 @@
 	</table>
 </div>
 
-<style>
+<style lang="postcss">
     table, th, td {
-        border: 1px solid;
+		@apply border;
     }
 
     td {
-        text-align: center;
-    }
-
-    table {
-        width: 80%;
+		@apply text-center;
     }
 </style>
