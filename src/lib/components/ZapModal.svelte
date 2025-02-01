@@ -222,10 +222,8 @@
 							<button
 								type="button"
 								class="w-full rounded-lg bg-gray-800 px-5 py-2 text-white transition-colors hover:bg-gray-600 focus:ring-2"
-								on:click={() => {
-									modalState.update((state) => ({ ...state, invoiceQR: '', invoice: '' }));
-									clearInterval(verifyPaymentInterval);
-								}}
+								on:click={() =>
+									modalState.update((state) => ({ ...state, invoiceQR: '', invoice: '' }))}
 							>
 								Return
 							</button>
