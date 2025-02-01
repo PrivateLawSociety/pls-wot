@@ -229,3 +229,20 @@ export const createInvoice = async (
 		throw error;
 	}
 };
+
+export const checkPayment = async (verify: string) => {
+	try {
+		const verifyRequest = await fetch(verify);
+
+		if (!verifyRequest.ok) {
+			const error = Error('Unable to make verify invoice request');
+			error.name = 'VerifyRequest';
+			throw error;
+		}
+
+		return await verifyRequest.json();
+	} catch (error) {
+		console.error('Unable to verify payment', error);
+		throw error;
+	}
+};

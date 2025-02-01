@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { createInvoice } from '$lib/nostr';
+	import { checkPayment, createInvoice } from '$lib/nostr';
 	import QRCode from 'qrcode';
 	import { writable } from 'svelte/store';
 
 	let textInvoiceInput;
+	let verifyPaymentInterval: NodeJS.Timeout;
 	let buttonSubmit: HTMLButtonElement;
 
 	const modalState = writable({
@@ -13,7 +14,9 @@
 		amount: 21,
 		eventId: '',
 		invoice: '',
-		invoiceQR: ''
+		invoiceQR: '',
+		paid: false,
+		preimage: ''
 	});
 
 	type ModalState = {
@@ -24,6 +27,8 @@
 		eventId: string;
 		invoice: string;
 		invoiceQR: string;
+		paid: boolean;
+		preimage: string;
 	};
 
 	const initialState: ModalState = {
@@ -33,7 +38,9 @@
 		amount: 21,
 		eventId: '',
 		invoice: '',
-		invoiceQR: ''
+		invoiceQR: '',
+		paid: false,
+		preimage: ''
 	};
 
 	export function openModal(receiver: string, eventId: string) {
@@ -49,6 +56,27 @@
 		modalState.set(initialState);
 	}
 
+	async function verifyPayment(url: string) {
+		try {
+			while ($modalState.invoiceQR && !$modalState.paid) {
+				const data = await checkPayment(url);
+
+				if (data.settled && data.preimage !== '') {
+					modalState.update((state) => ({
+						...state,
+						paid: data.settled,
+						preimage: data.preimage
+					}));
+					break;
+				}
+
+				await new Promise((res) => setTimeout(res, 3000)); // Delay 3 seconds
+			}
+		} catch (error) {
+			console.error('Error verify invoice payment:', error);
+		}
+	}
+
 	async function handleSubmit() {
 		try {
 			buttonSubmit.disabled = true;
@@ -61,6 +89,10 @@
 				invoice: data.pr,
 				invoiceQR
 			}));
+
+			if (data.verify) {
+				verifyPayment(data.verify);
+			}
 		} catch (error: any) {
 			console.error('Error creating invoice:', error);
 
@@ -128,48 +160,76 @@
 			<div class="p-4">
 				{#if $modalState.invoiceQR}
 					<div class="space-y-8">
-						<div class="flex flex-col items-center justify-center gap-4">
-							<img
-								src={$modalState.invoiceQR}
-								alt="QR code for lightning invoice"
-								width="256"
-								height="256"
-								class="rounded-lg"
-							/>
+						{#if $modalState.paid}
+							<div class="flex items-center justify-center gap-4 p-4">
+								<h3 class="mb-2 text-xl font-bold text-green-600">Payment successful!</h3>
+							</div>
 
-							<a
-								href={`lightning:${$modalState.invoice}`}
-								class="text-primary hover:text-secondary underline"
-							>
-								Pay with app
-							</a>
-						</div>
+							<div class="flex items-center justify-center gap-2 px-4">
+								<span class="block text-nowrap text-sm font-bold text-white">Pre-image:</span>
+								<input
+									type="text"
+									class="w-full rounded-lg bg-gray-700 p-2.5 text-sm text-white focus:ring-2"
+									value={$modalState.preimage}
+									readonly
+									aria-label="Lightning invoice preimage"
+								/>
+							</div>
 
-						<div class="flex items-center justify-center gap-4 px-4">
-							<input
-								bind:this={textInvoiceInput}
-								type="text"
-								class="w-full rounded-lg border border-gray-600 bg-gray-700 p-2.5 text-sm text-white focus:ring-2"
-								value={$modalState.invoice}
-								readonly
-								aria-label="Lightning invoice"
-							/>
 							<button
 								type="button"
-								class="rounded-lg bg-orange-500 px-5 py-2 text-white transition-colors hover:bg-orange-600 focus:ring-2 focus:ring-orange-300"
-								on:click={copyInvoice}
+								class="w-full rounded-lg bg-gray-800 px-5 py-2 text-white transition-colors hover:bg-gray-600 focus:ring-2"
+								on:click={() => modalState.update((state) => initialState)}
 							>
-								Copy
+								Return
 							</button>
-						</div>
+						{:else}
+							<div class="flex flex-col items-center justify-center gap-4">
+								<img
+									src={$modalState.invoiceQR}
+									alt="QR code for lightning invoice"
+									width="256"
+									height="256"
+									class="rounded-lg"
+								/>
 
-						<button
-							type="button"
-							class="w-full rounded-lg bg-gray-800 px-5 py-2 text-white transition-colors hover:bg-gray-600 focus:ring-2"
-							on:click={() => modalState.update((state) => ({ ...state, invoiceQR: '' }))}
-						>
-							Return
-						</button>
+								<a
+									href={`lightning:${$modalState.invoice}`}
+									class="text-primary hover:text-secondary underline"
+								>
+									Pay with app
+								</a>
+							</div>
+
+							<div class="flex items-center justify-center gap-4 px-4">
+								<input
+									bind:this={textInvoiceInput}
+									type="text"
+									class="w-full rounded-lg border border-gray-600 bg-gray-700 p-2.5 text-sm text-white focus:ring-2"
+									value={$modalState.invoice}
+									readonly
+									aria-label="Lightning invoice"
+								/>
+								<button
+									type="button"
+									class="rounded-lg bg-orange-500 px-5 py-2 text-white transition-colors hover:bg-orange-600 focus:ring-2 focus:ring-orange-300"
+									on:click={copyInvoice}
+								>
+									Copy
+								</button>
+							</div>
+
+							<button
+								type="button"
+								class="w-full rounded-lg bg-gray-800 px-5 py-2 text-white transition-colors hover:bg-gray-600 focus:ring-2"
+								on:click={() => {
+									modalState.update((state) => ({ ...state, invoiceQR: '', invoice: '' }));
+									clearInterval(verifyPaymentInterval);
+								}}
+							>
+								Return
+							</button>
+						{/if}
 					</div>
 				{:else}
 					<form on:submit|preventDefault={handleSubmit} class="space-y-6">
