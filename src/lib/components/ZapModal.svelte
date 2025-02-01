@@ -4,7 +4,6 @@
 	import { writable } from 'svelte/store';
 
 	let textInvoiceInput;
-	let verifyPaymentInterval: NodeJS.Timeout;
 	let buttonSubmit: HTMLButtonElement;
 
 	const modalState = writable({
