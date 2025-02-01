@@ -61,10 +61,20 @@
 				invoice: data.pr,
 				invoiceQR
 			}));
-		} catch (error) {
+		} catch (error: any) {
 			console.error('Error creating invoice:', error);
+
 			closeModal();
-			alert('Error trying to create invoice');
+
+			if (error?.name == 'ZapEndpoint') {
+				alert('This user does not have LUD-16');
+			} else if (error?.name == 'ProfileMetadata') {
+				alert('Error trying to get profile metadata');
+			} else if (error?.name == 'InvoiceRequest') {
+				alert('Error trying to send invoice request');
+			} else {
+				alert('Error trying to create invoice');
+			}
 		} finally {
 			buttonSubmit.disabled = false;
 		}

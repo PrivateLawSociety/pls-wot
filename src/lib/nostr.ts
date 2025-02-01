@@ -183,13 +183,17 @@ export const createInvoice = async (
 		const profileMetadata = await getProfileMetadata(publicKey);
 
 		if (!profileMetadata) {
-			throw new Error('Unable get profile metadata');
+			const error = new Error('Unable get profile metadata');
+			error.name = 'ProfileMetadata';
+			throw error;
 		}
 
 		const zapEndpoint = await getZapEndpoint(profileMetadata);
 
 		if (!zapEndpoint) {
-			return null;
+			const error = new Error('Unable get profile LUD-16');
+			error.name = 'ZapEndpoint';
+			throw error;
 		}
 
 		const zapRequestEvent = makeZapRequest({
@@ -214,12 +218,14 @@ export const createInvoice = async (
 		const invoiceRequest = await fetch(`${baseUrl}?${params}`);
 
 		if (!invoiceRequest.ok) {
-			throw new Error('Unable to make request invoice');
+			const error = Error('Unable to make request invoice');
+			error.name = 'InvoiceRequest';
+			throw error;
 		}
 
 		return await invoiceRequest.json();
 	} catch (error) {
 		console.error('Unable to create invoice', error);
-		return null;
+		throw error;
 	}
 };
