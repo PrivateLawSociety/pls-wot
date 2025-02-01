@@ -4,6 +4,7 @@
 	import { writable } from 'svelte/store';
 
 	let textInvoiceInput;
+	let buttonSubmit: HTMLButtonElement;
 
 	const modalState = writable({
 		isOpen: false,
@@ -50,6 +51,7 @@
 
 	async function handleSubmit() {
 		try {
+			buttonSubmit.disabled = true;
 			const { destination, message, amount, eventId } = $modalState;
 			const data = await createInvoice(destination, message, amount, eventId);
 			const invoiceQR = await QRCode.toDataURL(data.pr);
@@ -63,6 +65,8 @@
 			console.error('Error creating invoice:', error);
 			closeModal();
 			alert('Error trying to create invoice');
+		} finally {
+			buttonSubmit.disabled = false;
 		}
 	}
 
@@ -187,10 +191,11 @@
 						</div>
 
 						<button
+							bind:this={buttonSubmit}
 							type="submit"
-							class="w-full rounded-lg bg-orange-500 px-5 py-2 text-sm text-white transition-colors hover:bg-orange-600 focus:ring-2 focus:ring-orange-300"
+							class="w-full rounded-lg bg-orange-500 px-5 py-2 text-sm text-white transition-colors hover:bg-orange-600 focus:ring-2 focus:ring-orange-300 disabled:border disabled:border-orange-500 disabled:bg-transparent disabled:text-orange-500"
 						>
-							Create Invoice
+							{buttonSubmit?.disabled ? 'Creating Invoice...' : 'Create Invoice'}
 						</button>
 					</form>
 				{/if}
