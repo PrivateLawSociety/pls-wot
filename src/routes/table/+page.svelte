@@ -1,11 +1,30 @@
 <script lang="ts">
-	import { ReviewEvent } from "$lib";
-	import { relayList, relayPool } from "$lib/nostr";
-	import { npubEncode } from "nostr-tools/nip19";
-	import { onMount } from "svelte";
+	import { ReviewEvent } from '$lib';
+	import { getProfileMetadata, relayList, relayPool } from '$lib/nostr';
+	import { npubEncode } from 'nostr-tools/nip19';
+	import { onMount } from 'svelte';
+	import ZapModal from '$lib/components/ZapModal.svelte';
+	import ProfileAvatar from '$lib/components/ProfileAvatar.svelte';
+
+	let ZapModalComponent: ZapModal;
+
+	type profileType = {
+		npub: string;
+		name?: string;
+		picture?: string;
+		banner?: string;
+		about?: string;
+		nip05?: string;
+		website?: string;
+		lud16?: string;
+		pubkey: string;
+		display_name?: string;
+		displayName?: string;
+	};
 
 	interface Rating {
-		from: string;
+		eventId: string;
+		from: profileType;
 		to: string;
 		date: number;
 		score: boolean;
@@ -15,33 +34,33 @@
 
 	let ratings: Rating[] = [];
 
-	let filterRating: string = "all";
-	let filterBusiness: string = "all";
-	let filterFrom: string = "";
-	let filterTo: string = "";
+	let filterRating: string = 'all';
+	let filterBusiness: string = 'all';
+	let filterFrom: string = '';
+	let filterTo: string = '';
 
-	$: filteredRatings = ratings.filter(rating => {
+	$: filteredRatings = ratings.filter((rating) => {
 		let ratingMatch = true;
-		if (filterRating === "positive") {
+		if (filterRating === 'positive') {
 			ratingMatch = rating.score === true;
-		} else if (filterRating === "negative") {
+		} else if (filterRating === 'negative') {
 			ratingMatch = rating.score === false;
 		}
 
 		let businessMatch = true;
-		if (filterBusiness === "yes") {
+		if (filterBusiness === 'yes') {
 			businessMatch = rating.businessAlreadyDone === true;
-		} else if (filterBusiness === "no") {
+		} else if (filterBusiness === 'no') {
 			businessMatch = rating.businessAlreadyDone === false;
 		}
 
 		let fromMatch = true;
-		if (filterFrom.trim() !== "") {
-			fromMatch = rating.from.toLowerCase().includes(filterFrom.toLowerCase());
+		if (filterFrom.trim() !== '') {
+			fromMatch = rating.from.npub.toLowerCase().includes(filterFrom.toLowerCase());
 		}
 
 		let toMatch = true;
-		if (filterTo.trim() !== "") {
+		if (filterTo.trim() !== '') {
 			toMatch = rating.to.toLowerCase().includes(filterTo.toLowerCase());
 		}
 
@@ -56,52 +75,74 @@
 			[
 				{
 					kinds: [ReviewEvent],
-					"#l": ["pls-wot-rating"],
-				},
+					'#l': ['pls-wot-rating']
+				}
 			],
 			{
 				onevent(e) {
 					try {
 						const c = JSON.parse(e.content);
-						const newRating: Rating = {
-							from: npubEncode(c.from),
-							to: npubEncode(c.to),
-							date: e.created_at * 1000,
-							score: c.score,
-							businessAlreadyDone: c.businessAlreadyDone,
-							description: c.description,
-						};
-          
-						if (ratings.find((r) => r.from === newRating.from && r.to === newRating.to)) {
-							ratings = ratings.filter((r) =>
-								!(
-									r.from === newRating.from
-									&& r.to === newRating.to
-								)
-							)
-						}
 
-						ratings = [...ratings, newRating]
+						const from: profileType = {
+							npub: npubEncode(c.from),
+							pubkey: c.from
+						};
+
+						getProfileMetadata(c.from)
+							.then((event) => {
+								const metadata = JSON.parse(event?.content || '');
+
+								from.name = metadata?.name || '';
+								from.picture = metadata?.picture || '';
+								from.banner = metadata?.banner || '';
+								from.about = metadata?.about || '';
+								from.nip05 = metadata?.nip05 || '';
+								from.website = metadata?.website || '';
+								from.lud16 = metadata?.lud16 || '';
+								from.display_name = metadata?.display_name || '';
+								from.displayName = metadata?.displayName || '';
+							})
+							.finally(() => {
+								const newRating: Rating = {
+									eventId: e.id,
+									from: from,
+									to: npubEncode(c.to),
+									date: e.created_at * 1000,
+									score: c.score,
+									businessAlreadyDone: c.businessAlreadyDone,
+									description: c.description
+								};
+
+								if (ratings.find((r) => r.from === newRating.from && r.to === newRating.to)) {
+									ratings = ratings.filter(
+										(r) => !(r.from === newRating.from && r.to === newRating.to)
+									);
+								}
+
+								ratings = [...ratings, newRating];
+							});
 					} catch (error) {
-						console.error("Error processing the event:", error);
+						console.error('Error processing the event:', error);
 					}
-				},
+				}
 			}
 		);
 	});
 </script>
 
-<div class="flex items-center flex-col gap-8">
+<ZapModal bind:this={ZapModalComponent} />
+
+<div class="flex flex-col items-center gap-8">
 	<h1 class="text-2xl font-bold">Ratings table (Currently using replaceable events)</h1>
 
-	<div class="flex flex-wrap justify-center gap-4 w-full">
+	<div class="flex w-full flex-wrap justify-center gap-4">
 		<div class="flex flex-col">
 			<label for="filterRating" class="font-semibold">Filter by Rating:</label>
 			<select
 				id="filterRating"
 				bind:value={filterRating}
-				class="px-2 py-1 rounded border border-gray-300 bg-white text-black
-				       focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+				class="rounded border border-gray-300 bg-white px-2 py-1 text-black
+				       transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
 			>
 				<option value="all" class="text-black">All</option>
 				<option value="positive" class="text-black">Positive (👍)</option>
@@ -114,8 +155,8 @@
 			<select
 				id="filterBusiness"
 				bind:value={filterBusiness}
-				class="px-2 py-1 rounded border border-gray-300 bg-white text-black
-				       focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+				class="rounded border border-gray-300 bg-white px-2 py-1 text-black
+				       transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
 			>
 				<option value="all" class="text-black">All</option>
 				<option value="yes" class="text-black">Yes (👍)</option>
@@ -129,8 +170,8 @@
 				id="filterFrom"
 				bind:value={filterFrom}
 				placeholder="Enter Rater Key"
-				class="px-2 py-1 rounded border border-gray-300 bg-white text-black
-				       focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+				class="rounded border border-gray-300 bg-white px-2 py-1 text-black
+				       transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
 			/>
 		</div>
 
@@ -140,49 +181,86 @@
 				id="filterTo"
 				bind:value={filterTo}
 				placeholder="Enter Rated Key"
-				class="px-2 py-1 rounded border border-gray-300 bg-white text-black
-				       focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+				class="rounded border border-gray-300 bg-white px-2 py-1 text-black
+				       transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
 			/>
 		</div>
-
 	</div>
 
 	<table class="w-3/4">
 		<thead>
-		<tr>
-			<th>Rater Nostr Key</th>
-			<th>Rated Nostr Key</th>
-			<th>Date</th>
-			<th>Rating</th>
-			<th>Had <br> business</th>
-			<th>Description</th>
-		</tr>
+			<tr>
+				<th>Rater Nostr Key</th>
+				<th>Rated Nostr Key</th>
+				<th>Date</th>
+				<th>Rating</th>
+				<th>Had <br /> business</th>
+				<th>Description</th>
+				<th>Zap</th>
+			</tr>
 		</thead>
 		<tbody>
-		{#each filteredRatings as rating}
-			<tr>
-				<td>{rating.from}</td>
-				<td>{rating.to}</td>
-				<td>
-					{new Date(rating.date).toLocaleDateString()}
-					<br />
-					{new Date(rating.date).toLocaleTimeString()}
-				</td>
-				<td>{rating.score ? "👍" : "👎"}</td>
-				<td>{rating.businessAlreadyDone ? "👍" : "👎"}</td>
-				<td>{rating.description}</td>
-			</tr>
-		{/each}
+			{#each filteredRatings as rating}
+				<tr>
+					<td>
+						<div class="flex items-center gap-4 px-2">
+							<ProfileAvatar source={rating.from.picture} />
+
+							<div class="font-medium text-white">
+								{#if rating.from.display_name}
+									<div>{rating.from.display_name}</div>
+								{/if}
+
+								<div class="group relative">
+									<span class="block max-w-24 text-sm text-gray-400">
+										{`${rating.from.npub.slice(0, 5)}...${rating.from.npub.slice(-5)}`}
+									</span>
+
+									<span
+										class="absolute left-0 top-full z-10 hidden whitespace-nowrap rounded-md border border-white bg-gray-800 p-2 text-sm text-white group-hover:block"
+									>
+										{rating.from.npub}
+									</span>
+								</div>
+							</div>
+						</div>
+					</td>
+					<td>{rating.to}</td>
+					<td>
+						{new Date(rating.date).toLocaleDateString()}
+						<br />
+						{new Date(rating.date).toLocaleTimeString()}
+					</td>
+					<td>{rating.score ? '👍' : '👎'}</td>
+					<td>{rating.businessAlreadyDone ? '👍' : '👎'}</td>
+					<td>{rating.description}</td>
+					<td>
+						{#if rating.from.lud16}
+							<div class="p-2">
+								<button
+									type="button"
+									class="rounded-lg p-2.5 text-sm text-orange-500 transition-colors hover:bg-orange-600 hover:text-white focus:ring-2 focus:ring-orange-300"
+									on:click={() => ZapModalComponent.openModal(rating.from.npub, rating.eventId)}
+								>
+									Send Zap
+								</button>
+							</div>
+						{/if}
+					</td>
+				</tr>
+			{/each}
 		</tbody>
 	</table>
 </div>
 
 <style lang="postcss">
-    table, th, td {
+	table,
+	th,
+	td {
 		@apply border;
-    }
+	}
 
-    td {
+	td {
 		@apply text-center;
-    }
+	}
 </style>

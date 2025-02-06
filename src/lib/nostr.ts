@@ -7,6 +7,9 @@ import {
 	nip04,
 	finalizeEvent
 } from 'nostr-tools';
+import { Metadata } from 'nostr-tools/kinds';
+import { decode } from 'nostr-tools/nip19';
+import { getZapEndpoint, makeZapRequest } from 'nostr-tools/nip57';
 
 import { get, writable } from 'svelte/store';
 
@@ -155,3 +158,91 @@ public key: ${pubkey}`
 		subscribe: store.subscribe
 	};
 })();
+
+export const getProfileMetadata = async (publicKey: string): Promise<Event | null> => {
+	try {
+		return await relayPool.get(relayList, {
+			kinds: [Metadata],
+			authors: [publicKey],
+			limit: 1
+		});
+	} catch (error) {
+		console.error('Unable get profile metadata', error);
+		return null;
+	}
+};
+
+export const createInvoice = async (
+	destination: string,
+	message: string,
+	amount: number,
+	eventId: string
+) => {
+	try {
+		const publicKey: string = decode(destination).data.toString();
+		const profileMetadata = await getProfileMetadata(publicKey);
+
+		if (!profileMetadata) {
+			const error = new Error('Unable get profile metadata');
+			error.name = 'ProfileMetadata';
+			throw error;
+		}
+
+		const zapEndpoint = await getZapEndpoint(profileMetadata);
+
+		if (!zapEndpoint) {
+			const error = new Error('Unable get profile LUD-16');
+			error.name = 'ZapEndpoint';
+			throw error;
+		}
+
+		const zapRequestEvent = makeZapRequest({
+			profile: publicKey,
+			event: eventId,
+			amount: amount,
+			relays: relayList,
+			comment: message
+		});
+
+		const callbackUrl = new URL(zapEndpoint);
+
+		const params = new URLSearchParams({
+			...Object.fromEntries(callbackUrl.searchParams),
+			comment: message || '',
+			amount: Math.floor(amount * 1000).toString(),
+			nostr: JSON.stringify(zapRequestEvent)
+		});
+
+		const baseUrl = `${callbackUrl.protocol}//${callbackUrl.host}${callbackUrl.pathname}`;
+
+		const invoiceRequest = await fetch(`${baseUrl}?${params}`);
+
+		if (!invoiceRequest.ok) {
+			const error = Error('Unable to make request invoice');
+			error.name = 'InvoiceRequest';
+			throw error;
+		}
+
+		return await invoiceRequest.json();
+	} catch (error) {
+		console.error('Unable to create invoice', error);
+		throw error;
+	}
+};
+
+export const checkPayment = async (verify: string) => {
+	try {
+		const verifyRequest = await fetch(verify);
+
+		if (!verifyRequest.ok) {
+			const error = Error('Unable to make verify invoice request');
+			error.name = 'VerifyRequest';
+			throw error;
+		}
+
+		return await verifyRequest.json();
+	} catch (error) {
+		console.error('Unable to verify payment', error);
+		throw error;
+	}
+};
