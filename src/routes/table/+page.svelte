@@ -25,7 +25,7 @@
 	interface Rating {
 		eventId: string;
 		from: profileType;
-		to: string;
+		to: profileType;
 		date: number;
 		score: boolean;
 		businessAlreadyDone: boolean;
@@ -61,7 +61,7 @@
 
 		let toMatch = true;
 		if (filterTo.trim() !== '') {
-			toMatch = rating.to.toLowerCase().includes(filterTo.toLowerCase());
+			toMatch = rating.to.npub.toLowerCase().includes(filterTo.toLowerCase());
 		}
 
 		return ratingMatch && businessMatch && fromMatch && toMatch;
@@ -88,6 +88,11 @@
 							pubkey: c.from
 						};
 
+						const to: profileType = {
+							npub: npubEncode(c.to),
+							pubkey: c.to
+						};
+
 						getProfileMetadata(c.from)
 							.then((event) => {
 								const metadata = JSON.parse(event?.content || '');
@@ -103,23 +108,39 @@
 								from.displayName = metadata?.displayName || '';
 							})
 							.finally(() => {
-								const newRating: Rating = {
-									eventId: e.id,
-									from: from,
-									to: npubEncode(c.to),
-									date: e.created_at * 1000,
-									score: c.score,
-									businessAlreadyDone: c.businessAlreadyDone,
-									description: c.description
-								};
+								getProfileMetadata(c.to)
+									.then((event) => {
+										const metadata = JSON.parse(event?.content || '');
 
-								if (ratings.find((r) => r.from === newRating.from && r.to === newRating.to)) {
-									ratings = ratings.filter(
-										(r) => !(r.from === newRating.from && r.to === newRating.to)
-									);
-								}
+										to.name = metadata?.name || '';
+										to.picture = metadata?.picture || '';
+										to.banner = metadata?.banner || '';
+										to.about = metadata?.about || '';
+										to.nip05 = metadata?.nip05 || '';
+										to.website = metadata?.website || '';
+										to.lud16 = metadata?.lud16 || '';
+										to.display_name = metadata?.display_name || '';
+										to.displayName = metadata?.displayName || '';
+									})
+									.finally(() => {
+										const newRating: Rating = {
+											eventId: e.id,
+											from: from,
+											to: to,
+											date: e.created_at * 1000,
+											score: c.score,
+											businessAlreadyDone: c.businessAlreadyDone,
+											description: c.description
+										};
 
-								ratings = [...ratings, newRating];
+										if (ratings.find((r) => r.from === newRating.from && r.to === newRating.to)) {
+											ratings = ratings.filter(
+												(r) => !(r.from === newRating.from && r.to === newRating.to)
+											);
+										}
+
+										ratings = [...ratings, newRating];
+									});
 							});
 					} catch (error) {
 						console.error('Error processing the event:', error);
@@ -203,29 +224,55 @@
 			{#each filteredRatings as rating}
 				<tr>
 					<td>
-						<div class="flex items-center gap-4 px-2">
-							<ProfileAvatar source={rating.from.picture} />
+						<a href="https://njump.me/{rating.from.npub}" target="_blank">
+							<div class="flex items-center gap-4 px-2">
+								<ProfileAvatar source={rating.from.picture} />
 
-							<div class="font-medium text-white">
-								{#if rating.from.display_name}
-									<div>{rating.from.display_name}</div>
-								{/if}
+								<div class="font-medium text-white">
+									{#if rating.from.display_name}
+										<div>{rating.from.display_name}</div>
+									{/if}
 
-								<div class="group relative">
-									<span class="block max-w-24 text-sm text-gray-400">
-										{`${rating.from.npub.slice(0, 5)}...${rating.from.npub.slice(-5)}`}
-									</span>
+									<div class="group relative">
+										<span class="block max-w-24 text-sm text-gray-400">
+											{`${rating.from.npub.slice(0, 5)}...${rating.from.npub.slice(-5)}`}
+										</span>
 
-									<span
-										class="absolute left-0 top-full z-10 hidden whitespace-nowrap rounded-md border border-white bg-gray-800 p-2 text-sm text-white group-hover:block"
-									>
-										{rating.from.npub}
-									</span>
+										<span
+											class="absolute left-0 top-full z-10 hidden whitespace-nowrap rounded-md border border-white bg-gray-800 p-2 text-sm text-white group-hover:block"
+										>
+											{rating.from.npub}
+										</span>
+									</div>
 								</div>
 							</div>
-						</div>
+						</a>
 					</td>
-					<td>{rating.to}</td>
+					<td>
+						<a href="https://njump.me/{rating.to.npub}" target="_blank">
+							<div class="flex items-center gap-4 px-2">
+								<ProfileAvatar source={rating.to.picture} />
+
+								<div class="font-medium text-white">
+									{#if rating.to.display_name}
+										<div>{rating.to.display_name}</div>
+									{/if}
+
+									<div class="group relative">
+										<span class="block max-w-24 text-sm text-gray-400">
+											{`${rating.to.npub.slice(0, 5)}...${rating.to.npub.slice(-5)}`}
+										</span>
+
+										<span
+											class="absolute left-0 top-full z-10 hidden whitespace-nowrap rounded-md border border-white bg-gray-800 p-2 text-sm text-white group-hover:block"
+										>
+											{rating.to.npub}
+										</span>
+									</div>
+								</div>
+							</div>
+						</a>
+					</td>
 					<td>
 						{new Date(rating.date).toLocaleDateString()}
 						<br />
