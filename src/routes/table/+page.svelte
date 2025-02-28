@@ -95,7 +95,12 @@
 
 						getProfileMetadata(c.from)
 							.then((event) => {
-								const metadata = JSON.parse(event?.content || '');
+								let metadata = [];
+								try {
+									metadata = JSON.parse(event?.content || '{}');
+								} catch (error) {
+									console.error(error);
+								}
 
 								from.name = metadata?.name || '';
 								from.picture = metadata?.picture || '';
@@ -110,7 +115,12 @@
 							.finally(() => {
 								getProfileMetadata(c.to)
 									.then((event) => {
-										const metadata = JSON.parse(event?.content || '');
+										let metadata = [];
+										try {
+											metadata = JSON.parse(event?.content || '{}');
+										} catch (error) {
+											console.error(error);
+										}
 
 										to.name = metadata?.name || '';
 										to.picture = metadata?.picture || '';
