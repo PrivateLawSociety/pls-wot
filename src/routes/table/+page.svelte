@@ -229,9 +229,7 @@
 								<ProfileAvatar source={rating.from.picture} />
 
 								<div class="font-medium text-white">
-									{#if rating.from.display_name}
-										<div>{rating.from.display_name}</div>
-									{/if}
+									<div>{rating.from.display_name || rating.from.name}</div>
 
 									<div class="group relative">
 										<span class="block max-w-24 text-sm text-gray-400">
@@ -254,9 +252,7 @@
 								<ProfileAvatar source={rating.to.picture} />
 
 								<div class="font-medium text-white">
-									{#if rating.to.display_name}
-										<div>{rating.to.display_name}</div>
-									{/if}
+									<div>{rating.to.display_name || rating.to.name}</div>
 
 									<div class="group relative">
 										<span class="block max-w-24 text-sm text-gray-400">
