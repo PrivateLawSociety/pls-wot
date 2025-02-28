@@ -1,16 +1,31 @@
 <script lang="ts">
 	import { ReviewEvent } from '$lib';
-	import { relayList, relayPool } from '$lib/nostr';
+	import { getProfileMetadata, relayList, relayPool } from '$lib/nostr';
 	import { npubEncode } from 'nostr-tools/nip19';
 	import { onMount } from 'svelte';
 	import ZapModal from '$lib/components/ZapModal.svelte';
+	import ProfileAvatar from '$lib/components/ProfileAvatar.svelte';
 
 	let ZapModalComponent: ZapModal;
 
+	type profileType = {
+		npub: string;
+		name?: string;
+		picture?: string;
+		banner?: string;
+		about?: string;
+		nip05?: string;
+		website?: string;
+		lud16?: string;
+		pubkey: string;
+		display_name?: string;
+		displayName?: string;
+	};
+
 	interface Rating {
 		eventId: string;
-		from: string;
-		to: string;
+		from: profileType;
+		to: profileType;
 		date: number;
 		score: boolean;
 		businessAlreadyDone: boolean;
@@ -41,12 +56,12 @@
 
 		let fromMatch = true;
 		if (filterFrom.trim() !== '') {
-			fromMatch = rating.from.toLowerCase().includes(filterFrom.toLowerCase());
+			fromMatch = rating.from.npub.toLowerCase().includes(filterFrom.toLowerCase());
 		}
 
 		let toMatch = true;
 		if (filterTo.trim() !== '') {
-			toMatch = rating.to.toLowerCase().includes(filterTo.toLowerCase());
+			toMatch = rating.to.npub.toLowerCase().includes(filterTo.toLowerCase());
 		}
 
 		return ratingMatch && businessMatch && fromMatch && toMatch;
@@ -67,23 +82,76 @@
 				onevent(e) {
 					try {
 						const c = JSON.parse(e.content);
-						const newRating: Rating = {
-							eventId: e.id,
-							from: npubEncode(c.from),
-							to: npubEncode(c.to),
-							date: e.created_at * 1000,
-							score: c.score,
-							businessAlreadyDone: c.businessAlreadyDone,
-							description: c.description
+
+						const from: profileType = {
+							npub: npubEncode(c.from),
+							pubkey: c.from
 						};
 
-						if (ratings.find((r) => r.from === newRating.from && r.to === newRating.to)) {
-							ratings = ratings.filter(
-								(r) => !(r.from === newRating.from && r.to === newRating.to)
-							);
-						}
+						const to: profileType = {
+							npub: npubEncode(c.to),
+							pubkey: c.to
+						};
 
-						ratings = [...ratings, newRating];
+						getProfileMetadata(c.from)
+							.then((event) => {
+								let metadata = [];
+								try {
+									metadata = JSON.parse(event?.content || '{}');
+								} catch (error) {
+									console.error(error);
+								}
+
+								from.name = metadata?.name || '';
+								from.picture = metadata?.picture || '';
+								from.banner = metadata?.banner || '';
+								from.about = metadata?.about || '';
+								from.nip05 = metadata?.nip05 || '';
+								from.website = metadata?.website || '';
+								from.lud16 = metadata?.lud16 || '';
+								from.display_name = metadata?.display_name || '';
+								from.displayName = metadata?.displayName || '';
+							})
+							.finally(() => {
+								getProfileMetadata(c.to)
+									.then((event) => {
+										let metadata = [];
+										try {
+											metadata = JSON.parse(event?.content || '{}');
+										} catch (error) {
+											console.error(error);
+										}
+
+										to.name = metadata?.name || '';
+										to.picture = metadata?.picture || '';
+										to.banner = metadata?.banner || '';
+										to.about = metadata?.about || '';
+										to.nip05 = metadata?.nip05 || '';
+										to.website = metadata?.website || '';
+										to.lud16 = metadata?.lud16 || '';
+										to.display_name = metadata?.display_name || '';
+										to.displayName = metadata?.displayName || '';
+									})
+									.finally(() => {
+										const newRating: Rating = {
+											eventId: e.id,
+											from: from,
+											to: to,
+											date: e.created_at * 1000,
+											score: c.score,
+											businessAlreadyDone: c.businessAlreadyDone,
+											description: c.description
+										};
+
+										if (ratings.find((r) => r.from === newRating.from && r.to === newRating.to)) {
+											ratings = ratings.filter(
+												(r) => !(r.from === newRating.from && r.to === newRating.to)
+											);
+										}
+
+										ratings = [...ratings, newRating];
+									});
+							});
 					} catch (error) {
 						console.error('Error processing the event:', error);
 					}
@@ -165,8 +233,52 @@
 		<tbody>
 			{#each filteredRatings as rating}
 				<tr>
-					<td>{rating.from}</td>
-					<td>{rating.to}</td>
+					<td>
+						<a href="https://njump.me/{rating.from.npub}" target="_blank">
+							<div class="flex items-center gap-4 px-2">
+								<ProfileAvatar source={rating.from.picture} />
+
+								<div class="font-medium text-white">
+									<div>{rating.from.display_name || rating.from.name}</div>
+
+									<div class="group relative">
+										<span class="block max-w-24 text-sm text-gray-400">
+											{`${rating.from.npub.slice(0, 5)}...${rating.from.npub.slice(-5)}`}
+										</span>
+
+										<span
+											class="absolute left-0 top-full z-10 hidden whitespace-nowrap rounded-md border border-white bg-gray-800 p-2 text-sm text-white group-hover:block"
+										>
+											{rating.from.npub}
+										</span>
+									</div>
+								</div>
+							</div>
+						</a>
+					</td>
+					<td>
+						<a href="https://njump.me/{rating.to.npub}" target="_blank">
+							<div class="flex items-center gap-4 px-2">
+								<ProfileAvatar source={rating.to.picture} />
+
+								<div class="font-medium text-white">
+									<div>{rating.to.display_name || rating.to.name}</div>
+
+									<div class="group relative">
+										<span class="block max-w-24 text-sm text-gray-400">
+											{`${rating.to.npub.slice(0, 5)}...${rating.to.npub.slice(-5)}`}
+										</span>
+
+										<span
+											class="absolute left-0 top-full z-10 hidden whitespace-nowrap rounded-md border border-white bg-gray-800 p-2 text-sm text-white group-hover:block"
+										>
+											{rating.to.npub}
+										</span>
+									</div>
+								</div>
+							</div>
+						</a>
+					</td>
 					<td>
 						{new Date(rating.date).toLocaleDateString()}
 						<br />
@@ -175,14 +287,18 @@
 					<td>{rating.score ? '👍' : '👎'}</td>
 					<td>{rating.businessAlreadyDone ? '👍' : '👎'}</td>
 					<td>{rating.description}</td>
-					<td class="p-2">
-						<button
-							type="button"
-							class="rounded-lg p-2.5 text-sm text-orange-500 transition-colors hover:bg-orange-600 hover:text-white focus:ring-2 focus:ring-orange-300"
-							on:click={() => ZapModalComponent.openModal(rating.from, rating.eventId)}
-						>
-							Send Zap
-						</button>
+					<td>
+						{#if rating.from.lud16}
+							<div class="p-2">
+								<button
+									type="button"
+									class="rounded-lg p-2.5 text-sm text-orange-500 transition-colors hover:bg-orange-600 hover:text-white focus:ring-2 focus:ring-orange-300"
+									on:click={() => ZapModalComponent.openModal(rating.from.npub, rating.eventId)}
+								>
+									Send Zap
+								</button>
+							</div>
+						{/if}
 					</td>
 				</tr>
 			{/each}
