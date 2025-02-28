@@ -159,13 +159,26 @@ public key: ${pubkey}`
 	};
 })();
 
+export const profilesMetadata: Event[] = [];
 export const getProfileMetadata = async (publicKey: string): Promise<Event | null> => {
 	try {
-		return await relayPool.get(relayList, {
+		const getFromCache = profilesMetadata.find((profile) => profile.pubkey == publicKey);
+
+		if (getFromCache) {
+			return getFromCache;
+		}
+
+		const metadataEvent = await relayPool.get(relayList, {
 			kinds: [Metadata],
 			authors: [publicKey],
 			limit: 1
 		});
+
+		if (metadataEvent) {
+			profilesMetadata.push(metadataEvent);
+		}
+
+		return metadataEvent;
 	} catch (error) {
 		console.error('Unable get profile metadata', error);
 		return null;
