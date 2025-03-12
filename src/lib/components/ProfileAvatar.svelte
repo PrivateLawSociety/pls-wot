@@ -1,15 +1,17 @@
 <script lang="ts">
 	export let source;
+	export let alt = "";
+	export let size = 10;
 
 	let imageError = false;
 </script>
 
 {#if imageError || !source}
-	<div class="relative h-10 w-10 overflow-hidden rounded-full bg-gray-600">
+	<div class={`relative h-${size} w-${size} overflow-hidden rounded-full bg-gray-600`}>
 		<svg
-			class="absolute -left-1 h-12 w-12 text-gray-400"
+			class="absolute h-full w-full text-gray-400"
 			fill="currentColor"
-			viewBox="0 0 20 20"
+			viewBox="0 0 20 16"
 			xmlns="http://www.w3.org/2000/svg"
 		>
 			<path
@@ -20,5 +22,5 @@
 		</svg>
 	</div>
 {:else}
-	<img class="h-10 w-10 rounded-full" src={source} alt="" on:error={() => (imageError = true)} />
+	<img class={`h-${size} w-${size} rounded-full object-contain`} src={source} alt={alt} on:error={() => (imageError = true)} />
 {/if}

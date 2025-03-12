@@ -1,31 +1,24 @@
 <script lang="ts">
 	import { ReviewEvent } from '$lib';
-	import { getProfileMetadata, relayList, relayPool } from '$lib/nostr';
+	import {
+		getProfileMetadata,
+		parseProfileFromJsonString,
+		relayList,
+		relayPool,
+		type ProfileType,
+	} from '$lib/nostr';
 	import { npubEncode } from 'nostr-tools/nip19';
 	import { onMount } from 'svelte';
 	import ZapModal from '$lib/components/ZapModal.svelte';
 	import ProfileAvatar from '$lib/components/ProfileAvatar.svelte';
+	import { Input, Select } from 'flowbite-svelte';
 
 	let ZapModalComponent: ZapModal;
 
-	type profileType = {
-		npub: string;
-		name?: string;
-		picture?: string;
-		banner?: string;
-		about?: string;
-		nip05?: string;
-		website?: string;
-		lud16?: string;
-		pubkey: string;
-		display_name?: string;
-		displayName?: string;
-	};
-
 	interface Rating {
 		eventId: string;
-		from: profileType;
-		to: profileType;
+		from: ProfileType;
+		to: ProfileType;
 		date: number;
 		score: boolean;
 		businessAlreadyDone: boolean;
@@ -83,54 +76,28 @@
 					try {
 						const c = JSON.parse(e.content);
 
-						const from: profileType = {
+						const from: ProfileType = {
 							npub: npubEncode(c.from),
 							pubkey: c.from
 						};
 
-						const to: profileType = {
+						const to: ProfileType = {
 							npub: npubEncode(c.to),
 							pubkey: c.to
 						};
 
 						getProfileMetadata(c.from)
 							.then((event) => {
-								let metadata = [];
-								try {
-									metadata = JSON.parse(event?.content || '{}');
-								} catch (error) {
-									console.error(error);
-								}
+								if (!event) return;
 
-								from.name = metadata?.name || '';
-								from.picture = metadata?.picture || '';
-								from.banner = metadata?.banner || '';
-								from.about = metadata?.about || '';
-								from.nip05 = metadata?.nip05 || '';
-								from.website = metadata?.website || '';
-								from.lud16 = metadata?.lud16 || '';
-								from.display_name = metadata?.display_name || '';
-								from.displayName = metadata?.displayName || '';
+								Object.assign(from, parseProfileFromJsonString(event.content || '{}', from));
 							})
 							.finally(() => {
 								getProfileMetadata(c.to)
 									.then((event) => {
-										let metadata = [];
-										try {
-											metadata = JSON.parse(event?.content || '{}');
-										} catch (error) {
-											console.error(error);
-										}
+										if (!event) return;
 
-										to.name = metadata?.name || '';
-										to.picture = metadata?.picture || '';
-										to.banner = metadata?.banner || '';
-										to.about = metadata?.about || '';
-										to.nip05 = metadata?.nip05 || '';
-										to.website = metadata?.website || '';
-										to.lud16 = metadata?.lud16 || '';
-										to.display_name = metadata?.display_name || '';
-										to.displayName = metadata?.displayName || '';
+										Object.assign(to, parseProfileFromJsonString(event.content || '{}', to));
 									})
 									.finally(() => {
 										const newRating: Rating = {
@@ -169,35 +136,37 @@
 	<div class="flex w-full flex-wrap justify-center gap-4">
 		<div class="flex flex-col">
 			<label for="filterRating" class="font-semibold">Filter by Rating:</label>
-			<select
+			<Select
 				id="filterRating"
 				bind:value={filterRating}
+				items={[
+					{ value: "all", name: "All" },
+					{ value: "positive", name: "Positive (👍)" },
+					{ value: "negative", name: "Negative (👎)" },
+				]}
 				class="rounded border border-gray-300 bg-white px-2 py-1 text-black
 				       transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-			>
-				<option value="all" class="text-black">All</option>
-				<option value="positive" class="text-black">Positive (👍)</option>
-				<option value="negative" class="text-black">Negative (👎)</option>
-			</select>
+			/>
 		</div>
 
 		<div class="flex flex-col">
 			<label for="filterBusiness" class="font-semibold">Filter by Had Business:</label>
-			<select
+			<Select
 				id="filterBusiness"
 				bind:value={filterBusiness}
+				items={[
+					{ value: "all", name: "All" },
+					{ value: "yes", name: "Yes" },
+					{ value: "no", name: "No" },
+				]}
 				class="rounded border border-gray-300 bg-white px-2 py-1 text-black
 				       transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-			>
-				<option value="all" class="text-black">All</option>
-				<option value="yes" class="text-black">Yes (👍)</option>
-				<option value="no" class="text-black">No (👎)</option>
-			</select>
+			/>
 		</div>
 
 		<div class="flex flex-col">
 			<label for="filterFrom" class="font-semibold">Filter by Who Rated:</label>
-			<input
+			<Input
 				id="filterFrom"
 				bind:value={filterFrom}
 				placeholder="Enter Rater Key"
@@ -208,7 +177,7 @@
 
 		<div class="flex flex-col">
 			<label for="filterTo" class="font-semibold">Filter by Who Was Rated:</label>
-			<input
+			<Input
 				id="filterTo"
 				bind:value={filterTo}
 				placeholder="Enter Rated Key"
