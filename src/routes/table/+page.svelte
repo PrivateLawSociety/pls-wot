@@ -11,6 +11,7 @@
 	import { onMount } from 'svelte';
 	import ZapModal from '$lib/components/ZapModal.svelte';
 	import ProfileAvatar from '$lib/components/ProfileAvatar.svelte';
+	import { Input, Select } from 'flowbite-svelte';
 
 	let ZapModalComponent: ZapModal;
 
@@ -135,35 +136,37 @@
 	<div class="flex w-full flex-wrap justify-center gap-4">
 		<div class="flex flex-col">
 			<label for="filterRating" class="font-semibold">Filter by Rating:</label>
-			<select
+			<Select
 				id="filterRating"
 				bind:value={filterRating}
+				items={[
+					{ value: "all", name: "All" },
+					{ value: "positive", name: "Positive (👍)" },
+					{ value: "negative", name: "Negative (👎)" },
+				]}
 				class="rounded border border-gray-300 bg-white px-2 py-1 text-black
 				       transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-			>
-				<option value="all" class="text-black">All</option>
-				<option value="positive" class="text-black">Positive (👍)</option>
-				<option value="negative" class="text-black">Negative (👎)</option>
-			</select>
+			/>
 		</div>
 
 		<div class="flex flex-col">
 			<label for="filterBusiness" class="font-semibold">Filter by Had Business:</label>
-			<select
+			<Select
 				id="filterBusiness"
 				bind:value={filterBusiness}
+				items={[
+					{ value: "all", name: "All" },
+					{ value: "yes", name: "Yes" },
+					{ value: "no", name: "No" },
+				]}
 				class="rounded border border-gray-300 bg-white px-2 py-1 text-black
 				       transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-			>
-				<option value="all" class="text-black">All</option>
-				<option value="yes" class="text-black">Yes (👍)</option>
-				<option value="no" class="text-black">No (👎)</option>
-			</select>
+			/>
 		</div>
 
 		<div class="flex flex-col">
 			<label for="filterFrom" class="font-semibold">Filter by Who Rated:</label>
-			<input
+			<Input
 				id="filterFrom"
 				bind:value={filterFrom}
 				placeholder="Enter Rater Key"
@@ -174,7 +177,7 @@
 
 		<div class="flex flex-col">
 			<label for="filterTo" class="font-semibold">Filter by Who Was Rated:</label>
-			<input
+			<Input
 				id="filterTo"
 				bind:value={filterTo}
 				placeholder="Enter Rated Key"
