@@ -3,25 +3,10 @@
 
 	import { getPublicKey } from "nostr-tools/pure";
 	import { broadcastToNostr } from "$lib/nostr";
-	import { decode } from "nostr-tools/nip19";
+	import { decode, npubEncode } from "nostr-tools/nip19";
 	import { goto } from "$app/navigation";
 	import { nostrAuth } from "$lib/nostr";
-
-	function parseSecKey(str: string) {
-		try {
-			const nip19 = decode(str)
-
-			if (nip19.type == "nsec") return nip19.data
-		} catch {
-			try {
-				const buf = hexStringToBuffer(str)
-
-				if (buf.length !== 32) return;
-
-				return buf
-			} catch {}
-		}
-	}
+	import { Button, Input, Label, Textarea, Radio } from "flowbite-svelte";
 
 	function parsePubKey(str: string) {
 		try {
@@ -75,22 +60,10 @@
 		description: string
 	}
 
-	let mySecretKey = ""
 	let otherPersonPubKey = ""
 	let ratingDescription = ""
-	let score: boolean | undefined
-	let businessAlreadyDone: boolean | undefined
-
-	async function useAlby() {
-		try {
-			await window.nostr!.getPublicKey();
-
-			nostrAuth.tryLogin();
-			goto("/rate");
-		} catch (error) {
-			alert("You haven't allowed Alby to connect with the app");
-		}
-	}
+	let score: number | undefined
+	let businessAlreadyDone: number | undefined
 
 	async function handleSubmit() {
 		if (ratingDescription.length >= 1000)
@@ -99,15 +72,15 @@
 		if (score == undefined || businessAlreadyDone == undefined)
 			return alert("You forgot to fill some checkbox")
 
-		const mySecKey = parseSecKey(mySecretKey)
+		const privkey = nostrAuth.getPrivkey();
 
-		if (mySecKey) {
-			nostrAuth.loginWithPrivkey(bufToHexString(mySecKey))
+		if (privkey) {
+			nostrAuth.loginWithPrivkey(privkey)
 		}
 		
 		if (!nostrAuth) return alert("Invalid secret key")
 		
-		const myPubkey = !!nostrAuth ? nostrAuth.getPubkey()! : getPublicKey(mySecKey!)
+		const myPubkey = !!nostrAuth ? nostrAuth.getPubkey()! : getPublicKey(Buffer.from(privkey!, 'hex'))
 
 		const otherPubKey = parsePubKey(otherPersonPubKey)
 		if (!otherPubKey) return alert("Invalid public key")
@@ -116,8 +89,8 @@
 		let rating: Review = {
 			from: myPubkey,
 			to: ratedPubKey,
-			score,
-			businessAlreadyDone,
+			score: Boolean(score),
+			businessAlreadyDone: Boolean(businessAlreadyDone),
 			description: ratingDescription,
 		};
 
@@ -144,12 +117,13 @@
 			goto("/table")
 		}
 
-		mySecretKey = ""
 		otherPersonPubKey = ""
 		ratingDescription = ""
 		score = undefined
 		businessAlreadyDone = undefined
 	}
+
+	$: if (!$nostrAuth?.pubkey) goto("/");
 </script>
 
 
@@ -158,68 +132,49 @@
 		e.preventDefault()
 		handleSubmit()
 	}}
-	class="flex flex-col items-center gap-4 pt-4"
+	class="flex flex-col h-full justify-center items-center gap-4 pt-4"
 >
-	{#if !$nostrAuth?.pubkey}
-		<a
-			class="underline text-blue-600 hover:text-blue-800 visited:text-purple-600"
-			href="https://nostrtool.com/"
-			target="_blank"
-			rel="noopener noreferrer"
-		>
-			Generate keys here
-		</a>
-
-		<label class="flex flex-col w-1/2">
-			Your secret key
-			<input class="border-2" bind:value={mySecretKey} type="text" >
-		</label>
+	{#if $nostrAuth?.pubkey}
+		<Label class="flex flex-col w-1/2">
+			Your npub
+			<code class="font-bold">{npubEncode($nostrAuth.pubkey)}</code>
+		</Label>
 	{/if}
 
-	{#if window.nostr}
-		{#if !$nostrAuth?.pubkey}
-		<button type="button" disabled={!!$nostrAuth?.pubkey} class="p-2 border-2" on:click={useAlby}>
-			Use alby
-		</button>
-		{:else}
-			<p>[Alby] pubkey {$nostrAuth.pubkey}</p>
-		{/if}
-	{/if}
-
-	<label class="flex flex-col w-1/2">
+	<Label class="flex flex-col w-1/2">
 		Other person pubkey
-		<input class="border-2" bind:value={otherPersonPubKey} type="text" />
-	</label>
+		<Input class="border-2" bind:value={otherPersonPubKey} type="text" />
+	</Label>
 
 	<div class="flex flex-col w-1/2">
 		<p>What rating do you give to this person?</p>
-		<label>
-			<input bind:group={score} value={true} type="radio" />
+		<Label>
+			<Radio bind:group={score} value={1} />
 			positive
-		</label>
-		<label>
-			<input bind:group={score} value={false} type="radio" />
+		</Label>
+		<Label>
+			<Radio bind:group={score} value={0} />
 			negative
-		</label>
+		</Label>
 	</div>
 
 	<div class="flex flex-col w-1/2">
 		<p>Have you ever done business with this person?</p>
-		<label>
-			<input bind:group={businessAlreadyDone} value={true} type="radio">
+		<Label>
+			<Radio bind:group={businessAlreadyDone} value={1} />
 			yes
-		</label>
-		<label>
-			<input bind:group={businessAlreadyDone} value={false} type="radio">
+		</Label>
+		<Label>
+			<Radio bind:group={businessAlreadyDone} value={0} />
 			no
-		</label>
+		</Label>
 	</div>
 
-	<label class="flex flex-col w-1/2">
+	<Label class="flex flex-col w-1/2">
 		Rating description
-		<textarea rows=6 class="border-2" bind:value={ratingDescription}></textarea>
-	</label>
+		<Textarea rows={6} class="border-2" bind:value={ratingDescription} />
+	</Label>
 
-	<button type="submit" class="px-2 py-2 border-2">Create rating</button>
+	<Button type="submit" class="w-48 m:w-64">Create rating</Button>
 </form>
 
