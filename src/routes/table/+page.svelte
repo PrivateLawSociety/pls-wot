@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { ReviewEvent } from '$lib';
-	import { getProfileMetadata, relayList, relayPool } from '$lib/nostr';
+	import {
+		getProfileMetadata,
+		parseProfileFromJsonString,
+		relayList,
+		relayPool,
+		type ProfileType,
+	} from '$lib/nostr';
 	import { npubEncode } from 'nostr-tools/nip19';
 	import { onMount } from 'svelte';
 	import ZapModal from '$lib/components/ZapModal.svelte';
@@ -8,24 +14,10 @@
 
 	let ZapModalComponent: ZapModal;
 
-	type profileType = {
-		npub: string;
-		name?: string;
-		picture?: string;
-		banner?: string;
-		about?: string;
-		nip05?: string;
-		website?: string;
-		lud16?: string;
-		pubkey: string;
-		display_name?: string;
-		displayName?: string;
-	};
-
 	interface Rating {
 		eventId: string;
-		from: profileType;
-		to: profileType;
+		from: ProfileType;
+		to: ProfileType;
 		date: number;
 		score: boolean;
 		businessAlreadyDone: boolean;
@@ -83,54 +75,28 @@
 					try {
 						const c = JSON.parse(e.content);
 
-						const from: profileType = {
+						const from: ProfileType = {
 							npub: npubEncode(c.from),
 							pubkey: c.from
 						};
 
-						const to: profileType = {
+						const to: ProfileType = {
 							npub: npubEncode(c.to),
 							pubkey: c.to
 						};
 
 						getProfileMetadata(c.from)
 							.then((event) => {
-								let metadata = [];
-								try {
-									metadata = JSON.parse(event?.content || '{}');
-								} catch (error) {
-									console.error(error);
-								}
+								if (!event) return;
 
-								from.name = metadata?.name || '';
-								from.picture = metadata?.picture || '';
-								from.banner = metadata?.banner || '';
-								from.about = metadata?.about || '';
-								from.nip05 = metadata?.nip05 || '';
-								from.website = metadata?.website || '';
-								from.lud16 = metadata?.lud16 || '';
-								from.display_name = metadata?.display_name || '';
-								from.displayName = metadata?.displayName || '';
+								Object.assign(from, parseProfileFromJsonString(event.content || '{}', from));
 							})
 							.finally(() => {
 								getProfileMetadata(c.to)
 									.then((event) => {
-										let metadata = [];
-										try {
-											metadata = JSON.parse(event?.content || '{}');
-										} catch (error) {
-											console.error(error);
-										}
+										if (!event) return;
 
-										to.name = metadata?.name || '';
-										to.picture = metadata?.picture || '';
-										to.banner = metadata?.banner || '';
-										to.about = metadata?.about || '';
-										to.nip05 = metadata?.nip05 || '';
-										to.website = metadata?.website || '';
-										to.lud16 = metadata?.lud16 || '';
-										to.display_name = metadata?.display_name || '';
-										to.displayName = metadata?.displayName || '';
+										Object.assign(to, parseProfileFromJsonString(event.content || '{}', to));
 									})
 									.finally(() => {
 										const newRating: Rating = {

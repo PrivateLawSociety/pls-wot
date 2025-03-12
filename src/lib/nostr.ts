@@ -25,6 +25,39 @@ export let relayList = [
 	'wss://nos.lol'
 ];
 
+export interface ProfileType {
+	npub: string;
+	name?: string;
+	picture?: string;
+	banner?: string;
+	about?: string;
+	nip05?: string;
+	website?: string;
+	lud16?: string;
+	pubkey: string;
+	display_name?: string;
+	displayName?: string;
+}
+
+export function parseProfileFromJsonString(content: string, profile: ProfileType) {
+	let metadata = {} as any;
+	metadata = JSON.parse(content || '{}');
+
+	const targetProfile = Object.assign({}, profile);
+
+	targetProfile.name = metadata?.name || '';
+	targetProfile.picture = metadata?.picture || '';
+	targetProfile.banner = metadata?.banner || '';
+	targetProfile.about = metadata?.about || '';
+	targetProfile.nip05 = metadata?.nip05 || '';
+	targetProfile.website = metadata?.website || '';
+	targetProfile.lud16 = metadata?.lud16 || '';
+	targetProfile.display_name = metadata?.display_name || '';
+	targetProfile.displayName = metadata?.displayName || '';
+
+	return targetProfile;
+}
+
 export function broadcastToNostr(event: Event) {
 	return relayPool.publish(relayList, event);
 }
