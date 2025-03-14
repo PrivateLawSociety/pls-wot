@@ -141,8 +141,8 @@
 				bind:value={filterRating}
 				items={[
 					{ value: "all", name: "All" },
-					{ value: "positive", name: "Positive (👍)" },
-					{ value: "negative", name: "Negative (👎)" },
+					{ value: "positive", name: "✅ Positive" },
+					{ value: "negative", name: "❌ Negative" },
 				]}
 				class="rounded border border-gray-300 bg-white px-2 py-1 text-black
 				       transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -156,7 +156,7 @@
 				bind:value={filterBusiness}
 				items={[
 					{ value: "all", name: "All" },
-					{ value: "yes", name: "Yes" },
+					{ value: "yes", name: "✅ Yes" },
 					{ value: "no", name: "No" },
 				]}
 				class="rounded border border-gray-300 bg-white px-2 py-1 text-black
@@ -253,8 +253,8 @@
 						<br />
 						{new Date(rating.date).toLocaleTimeString()}
 					</td>
-					<td>{rating.score ? '👍' : '👎'}</td>
-					<td>{rating.businessAlreadyDone ? '👍' : '👎'}</td>
+					<td>{rating.score ? '✅' : '❌'}</td>
+					<td>{rating.businessAlreadyDone ? '✅' : 'No'}</td>
 					<td>{rating.description}</td>
 					<td>
 						{#if rating.from.lud16}

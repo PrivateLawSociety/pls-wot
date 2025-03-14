@@ -148,26 +148,30 @@
 
 	<div class="flex flex-col w-1/2">
 		<p>What rating do you give to this person?</p>
-		<Label>
-			<Radio bind:group={score} value={1} />
-			positive
-		</Label>
-		<Label>
-			<Radio bind:group={score} value={0} />
-			negative
-		</Label>
+		<div class="flex gap-4">
+			<Label class="flex items-center gap-1">
+				<Radio bind:group={score} value={1} />
+				positive
+			</Label>
+			<Label class="flex items-center gap-1">
+				<Radio bind:group={score} value={0} />
+				negative
+			</Label>
+		</div>
 	</div>
 
 	<div class="flex flex-col w-1/2">
 		<p>Have you ever done business with this person?</p>
-		<Label>
-			<Radio bind:group={businessAlreadyDone} value={1} />
-			yes
-		</Label>
-		<Label>
-			<Radio bind:group={businessAlreadyDone} value={0} />
-			no
-		</Label>
+		<div class="flex gap-4">
+			<Label class="flex items-center gap-1">
+				<Radio bind:group={businessAlreadyDone} value={1} />
+				yes
+			</Label>
+			<Label class="flex items-center gap-1">
+				<Radio bind:group={businessAlreadyDone} value={0} />
+				no
+			</Label>
+		</div>
 	</div>
 
 	<Label class="flex flex-col w-1/2">
