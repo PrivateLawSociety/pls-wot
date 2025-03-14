@@ -103,11 +103,7 @@
 							description: c.description
 						};
 
-						if (ratings.find((r) => r.from === newRating.from && r.to === newRating.to)) {
-							ratings = ratings.filter(
-								(r) => !(r.from === newRating.from && r.to === newRating.to)
-							);
-						}
+						ratings = ratings.filter((r) => !(r.eventId === newRating.eventId));
 
 						ratings = [...ratings, newRating];
 
