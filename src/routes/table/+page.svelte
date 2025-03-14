@@ -93,64 +93,58 @@
 							pubkey: c.to
 						};
 
-						getProfileMetadata(c.from)
-							.then((event) => {
-								let metadata = [];
-								try {
-									metadata = JSON.parse(event?.content || '{}');
-								} catch (error) {
-									console.error(error);
-								}
+						const newRating: Rating = {
+							eventId: e.id,
+							from: from,
+							to: to,
+							date: e.created_at * 1000,
+							score: c.score,
+							businessAlreadyDone: c.businessAlreadyDone,
+							description: c.description
+						};
 
-								from.name = metadata?.name || '';
-								from.picture = metadata?.picture || '';
-								from.banner = metadata?.banner || '';
-								from.about = metadata?.about || '';
-								from.nip05 = metadata?.nip05 || '';
-								from.website = metadata?.website || '';
-								from.lud16 = metadata?.lud16 || '';
-								from.display_name = metadata?.display_name || '';
-								from.displayName = metadata?.displayName || '';
+						if (ratings.find((r) => r.from === newRating.from && r.to === newRating.to)) {
+							ratings = ratings.filter(
+								(r) => !(r.from === newRating.from && r.to === newRating.to)
+							);
+						}
+
+						ratings = [...ratings, newRating];
+
+						Promise.all([getProfileMetadata(c.from), getProfileMetadata(c.to)])
+							.then(([fromEvent, toEvent]) => {
+								let fromMetadata = [];
+								fromMetadata = JSON.parse(fromEvent?.content || '{}');
+
+								from.name = fromMetadata?.name || '';
+								from.picture = fromMetadata?.picture || '';
+								from.banner = fromMetadata?.banner || '';
+								from.about = fromMetadata?.about || '';
+								from.nip05 = fromMetadata?.nip05 || '';
+								from.website = fromMetadata?.website || '';
+								from.lud16 = fromMetadata?.lud16 || '';
+								from.display_name = fromMetadata?.display_name || '';
+								from.displayName = fromMetadata?.displayName || '';
+
+								let toMetadata = [];
+								toMetadata = JSON.parse(toEvent?.content || '{}');
+
+								to.name = toMetadata?.name || '';
+								to.picture = toMetadata?.picture || '';
+								to.banner = toMetadata?.banner || '';
+								to.about = toMetadata?.about || '';
+								to.nip05 = toMetadata?.nip05 || '';
+								to.website = toMetadata?.website || '';
+								to.lud16 = toMetadata?.lud16 || '';
+								to.display_name = toMetadata?.display_name || '';
+								to.displayName = toMetadata?.displayName || '';
+							})
+							.catch((error) => {
+								console.error('Error when processing the profile metadata:', error);
 							})
 							.finally(() => {
-								getProfileMetadata(c.to)
-									.then((event) => {
-										let metadata = [];
-										try {
-											metadata = JSON.parse(event?.content || '{}');
-										} catch (error) {
-											console.error(error);
-										}
-
-										to.name = metadata?.name || '';
-										to.picture = metadata?.picture || '';
-										to.banner = metadata?.banner || '';
-										to.about = metadata?.about || '';
-										to.nip05 = metadata?.nip05 || '';
-										to.website = metadata?.website || '';
-										to.lud16 = metadata?.lud16 || '';
-										to.display_name = metadata?.display_name || '';
-										to.displayName = metadata?.displayName || '';
-									})
-									.finally(() => {
-										const newRating: Rating = {
-											eventId: e.id,
-											from: from,
-											to: to,
-											date: e.created_at * 1000,
-											score: c.score,
-											businessAlreadyDone: c.businessAlreadyDone,
-											description: c.description
-										};
-
-										if (ratings.find((r) => r.from === newRating.from && r.to === newRating.to)) {
-											ratings = ratings.filter(
-												(r) => !(r.from === newRating.from && r.to === newRating.to)
-											);
-										}
-
-										ratings = [...ratings, newRating];
-									});
+								const ratingIndex = ratings.findIndex((r) => r.eventId === newRating.eventId);
+								ratings[ratingIndex] = newRating;
 							});
 					} catch (error) {
 						console.error('Error processing the event:', error);
@@ -239,7 +233,7 @@
 								<ProfileAvatar source={rating.from.picture} />
 
 								<div class="font-medium text-white">
-									<div>{rating.from.display_name || rating.from.name}</div>
+									<div>{rating.from.display_name || rating.from.name || ''}</div>
 
 									<div class="group relative">
 										<span class="block max-w-24 text-sm text-gray-400">
@@ -262,7 +256,7 @@
 								<ProfileAvatar source={rating.to.picture} />
 
 								<div class="font-medium text-white">
-									<div>{rating.to.display_name || rating.to.name}</div>
+									<div>{rating.to.display_name || rating.to.name || ''}</div>
 
 									<div class="group relative">
 										<span class="block max-w-24 text-sm text-gray-400">
