@@ -192,13 +192,12 @@ public key: ${pubkey}`
 	};
 })();
 
-export const profilesMetadata: Event[] = [];
+export const profilesMetadata = writable<Record<string, Event>>({});
 export const getProfileMetadata = async (publicKey: string): Promise<Event | null> => {
 	try {
-		const getFromCache = profilesMetadata.find((profile) => profile.pubkey == publicKey);
-
-		if (getFromCache) {
-			return getFromCache;
+		const profiles = get(profilesMetadata);
+		if (profiles[publicKey]) {
+			return profiles[publicKey];
 		}
 
 		const metadataEvent = await relayPool.get(relayList, {
@@ -208,7 +207,10 @@ export const getProfileMetadata = async (publicKey: string): Promise<Event | nul
 		});
 
 		if (metadataEvent) {
-			profilesMetadata.push(metadataEvent);
+			profilesMetadata.update((profiles) => ({
+				...profiles,
+				[publicKey]: metadataEvent
+			}));
 		}
 
 		return metadataEvent;

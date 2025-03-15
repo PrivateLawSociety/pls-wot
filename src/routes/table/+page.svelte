@@ -86,38 +86,32 @@
 							pubkey: c.to
 						};
 
-						getProfileMetadata(c.from)
-							.then((event) => {
-								if (!event) return;
+						const newRating: Rating = {
+							eventId: e.id,
+							from: from,
+							to: to,
+							date: e.created_at * 1000,
+							score: c.score,
+							businessAlreadyDone: c.businessAlreadyDone,
+							description: c.description
+						};
 
-								Object.assign(from, parseProfileFromJsonString(event.content || '{}', from));
+						ratings = ratings.filter((r) => !(r.eventId === newRating.eventId));
+
+						ratings = [...ratings, newRating];
+
+						Promise.all([getProfileMetadata(c.from), getProfileMetadata(c.to)])
+              .then(([fromEvent, toEvent]) => {
+								Object.assign(from, parseProfileFromJsonString(fromEvent?.content || '{}', from));
+
+								Object.assign(to, parseProfileFromJsonString(toEvent?.content || '{}', to));
+							})
+							.catch((error) => {
+								console.error('Error when processing the profile metadata:', error);
 							})
 							.finally(() => {
-								getProfileMetadata(c.to)
-									.then((event) => {
-										if (!event) return;
-
-										Object.assign(to, parseProfileFromJsonString(event.content || '{}', to));
-									})
-									.finally(() => {
-										const newRating: Rating = {
-											eventId: e.id,
-											from: from,
-											to: to,
-											date: e.created_at * 1000,
-											score: c.score,
-											businessAlreadyDone: c.businessAlreadyDone,
-											description: c.description
-										};
-
-										if (ratings.find((r) => r.from === newRating.from && r.to === newRating.to)) {
-											ratings = ratings.filter(
-												(r) => !(r.from === newRating.from && r.to === newRating.to)
-											);
-										}
-
-										ratings = [...ratings, newRating];
-									});
+								const ratingIndex = ratings.findIndex((r) => r.eventId === newRating.eventId);
+								ratings[ratingIndex] = newRating;
 							});
 					} catch (error) {
 						console.error('Error processing the event:', error);
@@ -208,7 +202,7 @@
 								<ProfileAvatar source={rating.from.picture} />
 
 								<div class="font-medium text-white">
-									<div>{rating.from.display_name || rating.from.name}</div>
+									<div>{rating.from.display_name || rating.from.name || ''}</div>
 
 									<div class="group relative">
 										<span class="block max-w-24 text-sm text-gray-400">
@@ -231,7 +225,7 @@
 								<ProfileAvatar source={rating.to.picture} />
 
 								<div class="font-medium text-white">
-									<div>{rating.to.display_name || rating.to.name}</div>
+									<div>{rating.to.display_name || rating.to.name || ''}</div>
 
 									<div class="group relative">
 										<span class="block max-w-24 text-sm text-gray-400">
