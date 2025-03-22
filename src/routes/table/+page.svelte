@@ -1,31 +1,24 @@
 <script lang="ts">
 	import { ReviewEvent } from '$lib';
-	import { getProfileMetadata, relayList, relayPool } from '$lib/nostr';
+	import {
+		getProfileMetadata,
+		parseProfileFromJsonString,
+		relayList,
+		relayPool,
+		type ProfileType,
+	} from '$lib/nostr';
 	import { npubEncode } from 'nostr-tools/nip19';
 	import { onMount } from 'svelte';
 	import ZapModal from '$lib/components/ZapModal.svelte';
 	import ProfileAvatar from '$lib/components/ProfileAvatar.svelte';
+	import { Input, Select } from 'flowbite-svelte';
 
 	let ZapModalComponent: ZapModal;
 
-	type profileType = {
-		npub: string;
-		name?: string;
-		picture?: string;
-		banner?: string;
-		about?: string;
-		nip05?: string;
-		website?: string;
-		lud16?: string;
-		pubkey: string;
-		display_name?: string;
-		displayName?: string;
-	};
-
 	interface Rating {
 		eventId: string;
-		from: profileType;
-		to: profileType;
+		from: ProfileType;
+		to: ProfileType;
 		date: number;
 		score: boolean;
 		businessAlreadyDone: boolean;
@@ -83,12 +76,12 @@
 					try {
 						const c = JSON.parse(e.content);
 
-						const from: profileType = {
+						const from: ProfileType = {
 							npub: npubEncode(c.from),
 							pubkey: c.from
 						};
 
-						const to: profileType = {
+						const to: ProfileType = {
 							npub: npubEncode(c.to),
 							pubkey: c.to
 						};
@@ -108,32 +101,10 @@
 						ratings = [...ratings, newRating];
 
 						Promise.all([getProfileMetadata(c.from), getProfileMetadata(c.to)])
-							.then(([fromEvent, toEvent]) => {
-								let fromMetadata = [];
-								fromMetadata = JSON.parse(fromEvent?.content || '{}');
+              .then(([fromEvent, toEvent]) => {
+								Object.assign(from, parseProfileFromJsonString(fromEvent?.content || '{}', from));
 
-								from.name = fromMetadata?.name || '';
-								from.picture = fromMetadata?.picture || '';
-								from.banner = fromMetadata?.banner || '';
-								from.about = fromMetadata?.about || '';
-								from.nip05 = fromMetadata?.nip05 || '';
-								from.website = fromMetadata?.website || '';
-								from.lud16 = fromMetadata?.lud16 || '';
-								from.display_name = fromMetadata?.display_name || '';
-								from.displayName = fromMetadata?.displayName || '';
-
-								let toMetadata = [];
-								toMetadata = JSON.parse(toEvent?.content || '{}');
-
-								to.name = toMetadata?.name || '';
-								to.picture = toMetadata?.picture || '';
-								to.banner = toMetadata?.banner || '';
-								to.about = toMetadata?.about || '';
-								to.nip05 = toMetadata?.nip05 || '';
-								to.website = toMetadata?.website || '';
-								to.lud16 = toMetadata?.lud16 || '';
-								to.display_name = toMetadata?.display_name || '';
-								to.displayName = toMetadata?.displayName || '';
+								Object.assign(to, parseProfileFromJsonString(toEvent?.content || '{}', to));
 							})
 							.catch((error) => {
 								console.error('Error when processing the profile metadata:', error);
@@ -159,35 +130,37 @@
 	<div class="flex w-full flex-wrap justify-center gap-4">
 		<div class="flex flex-col">
 			<label for="filterRating" class="font-semibold">Filter by Rating:</label>
-			<select
+			<Select
 				id="filterRating"
 				bind:value={filterRating}
+				items={[
+					{ value: "all", name: "All" },
+					{ value: "positive", name: "✅ Positive" },
+					{ value: "negative", name: "❌ Negative" },
+				]}
 				class="rounded border border-gray-300 bg-white px-2 py-1 text-black
 				       transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-			>
-				<option value="all" class="text-black">All</option>
-				<option value="positive" class="text-black">Positive (👍)</option>
-				<option value="negative" class="text-black">Negative (👎)</option>
-			</select>
+			/>
 		</div>
 
 		<div class="flex flex-col">
 			<label for="filterBusiness" class="font-semibold">Filter by Had Business:</label>
-			<select
+			<Select
 				id="filterBusiness"
 				bind:value={filterBusiness}
+				items={[
+					{ value: "all", name: "All" },
+					{ value: "yes", name: "✅ Yes" },
+					{ value: "no", name: "No" },
+				]}
 				class="rounded border border-gray-300 bg-white px-2 py-1 text-black
 				       transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-			>
-				<option value="all" class="text-black">All</option>
-				<option value="yes" class="text-black">Yes (👍)</option>
-				<option value="no" class="text-black">No (👎)</option>
-			</select>
+			/>
 		</div>
 
 		<div class="flex flex-col">
 			<label for="filterFrom" class="font-semibold">Filter by Who Rated:</label>
-			<input
+			<Input
 				id="filterFrom"
 				bind:value={filterFrom}
 				placeholder="Enter Rater Key"
@@ -198,7 +171,7 @@
 
 		<div class="flex flex-col">
 			<label for="filterTo" class="font-semibold">Filter by Who Was Rated:</label>
-			<input
+			<Input
 				id="filterTo"
 				bind:value={filterTo}
 				placeholder="Enter Rated Key"
@@ -274,8 +247,8 @@
 						<br />
 						{new Date(rating.date).toLocaleTimeString()}
 					</td>
-					<td>{rating.score ? '👍' : '👎'}</td>
-					<td>{rating.businessAlreadyDone ? '👍' : '👎'}</td>
+					<td>{rating.score ? '✅' : '❌'}</td>
+					<td>{rating.businessAlreadyDone ? '✅' : 'No'}</td>
 					<td>{rating.description}</td>
 					<td>
 						{#if rating.from.lud16}
