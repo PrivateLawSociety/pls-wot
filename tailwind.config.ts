@@ -6,6 +6,8 @@ export default {
 		'./node_modules/flowbite-svelte/**/*.{html,js,svelte,ts}',
 	],
 
+	darkMode: "class",
+
 	theme: {
 		extend: {
 			colors: {
