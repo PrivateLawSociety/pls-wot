@@ -2,10 +2,11 @@
 	import { ReviewEvent } from '$lib';
 	import {
 		getProfileMetadata,
+		nostrAuth,
 		parseProfileFromJsonString,
 		relayList,
 		relayPool,
-		type ProfileType,
+		type ProfileType
 	} from '$lib/nostr';
 	import { npubEncode } from 'nostr-tools/nip19';
 	import { onMount } from 'svelte';
@@ -101,7 +102,7 @@
 						ratings = [...ratings, newRating];
 
 						Promise.all([getProfileMetadata(c.from), getProfileMetadata(c.to)])
-              .then(([fromEvent, toEvent]) => {
+							.then(([fromEvent, toEvent]) => {
 								Object.assign(from, parseProfileFromJsonString(fromEvent?.content || '{}', from));
 
 								Object.assign(to, parseProfileFromJsonString(toEvent?.content || '{}', to));
@@ -120,6 +121,33 @@
 			}
 		);
 	});
+
+	const download = (filename: string, text: any) => {
+		var element = document.createElement('a');
+		element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+		element.setAttribute('download', filename);
+		element.style.display = 'none';
+		document.body.appendChild(element);
+		element.click();
+		document.body.removeChild(element);
+	};
+
+	const handleDownload = (myRatings: boolean = false) => {
+		if (myRatings) {
+			if (!$nostrAuth?.pubkey) {
+				alert('You must be logged');
+				return;
+			}
+
+			let allMyRatings = ratings.filter(
+				(r) => r.from.pubkey === $nostrAuth?.pubkey || r.to.pubkey === $nostrAuth?.pubkey
+			);
+
+			return download('ratings.json', JSON.stringify(allMyRatings, null, '\t'));
+		}
+
+		return download('ratings.json', JSON.stringify(filteredRatings, null, '\t'));
+	};
 </script>
 
 <ZapModal bind:this={ZapModalComponent} />
@@ -134,9 +162,9 @@
 				id="filterRating"
 				bind:value={filterRating}
 				items={[
-					{ value: "all", name: "All" },
-					{ value: "positive", name: "✅ Positive" },
-					{ value: "negative", name: "❌ Negative" },
+					{ value: 'all', name: 'All' },
+					{ value: 'positive', name: '✅ Positive' },
+					{ value: 'negative', name: '❌ Negative' }
 				]}
 				class="rounded border border-gray-300 bg-white px-2 py-1 text-black
 				       transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -149,9 +177,9 @@
 				id="filterBusiness"
 				bind:value={filterBusiness}
 				items={[
-					{ value: "all", name: "All" },
-					{ value: "yes", name: "✅ Yes" },
-					{ value: "no", name: "No" },
+					{ value: 'all', name: 'All' },
+					{ value: 'yes', name: '✅ Yes' },
+					{ value: 'no', name: 'No' }
 				]}
 				class="rounded border border-gray-300 bg-white px-2 py-1 text-black
 				       transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -178,6 +206,30 @@
 				class="rounded border border-gray-300 bg-white px-2 py-1 text-black
 				       transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
 			/>
+		</div>
+
+		<div class="flex flex-col">
+			<label for="downloadReviews" class="font-semibold">Download reviews:</label>
+
+			<div class="flex grid-cols-2 gap-2">
+				<button
+					type="button"
+					class="rounded border border-gray-600 bg-gray-700 px-2 py-1 text-white transition-colors hover:bg-orange-600 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+					on:click={() => handleDownload()}
+				>
+					From filters
+				</button>
+
+				{#if $nostrAuth?.pubkey}
+					<button
+						type="button"
+						class="rounded border border-gray-600 bg-gray-700 px-2 py-1 text-white transition-colors hover:bg-orange-600 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+						on:click={() => handleDownload(true)}
+					>
+						All My Reviews
+					</button>
+				{/if}
+			</div>
 		</div>
 	</div>
 
