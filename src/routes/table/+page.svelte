@@ -125,7 +125,7 @@
 <ZapModal bind:this={ZapModalComponent} />
 
 <div class="flex flex-col items-center gap-8">
-	<P size="2xl" class="font-bold">Ratings table (Currently using replaceable events)</P>
+	<h1 class="text-2xl font-bold">Ratings table (Currently using replaceable events)</h1>
 
 	<div class="flex w-full flex-wrap justify-center gap-4">
 		<div class="flex flex-col">
