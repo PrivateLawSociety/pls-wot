@@ -13,6 +13,7 @@
 	import ZapModal from '$lib/components/ZapModal.svelte';
 	import ProfileAvatar from '$lib/components/ProfileAvatar.svelte';
 	import { Input, Select } from 'flowbite-svelte';
+	import type { Event } from 'nostr-tools';
 
 	let ZapModalComponent: ZapModal;
 
@@ -63,6 +64,8 @@
 
 	$: ratings.sort((a, b) => b.date - a.date);
 
+	const events: Event[] = [];
+
 	onMount(() => {
 		relayPool.subscribeMany(
 			relayList,
@@ -75,6 +78,8 @@
 			{
 				onevent(e) {
 					try {
+						events.push(e);
+
 						const c = JSON.parse(e.content);
 
 						const from: ProfileType = {
@@ -139,14 +144,24 @@
 				return;
 			}
 
-			let allMyRatings = ratings.filter(
-				(r) => r.from.pubkey === $nostrAuth?.pubkey || r.to.pubkey === $nostrAuth?.pubkey
-			);
+			let myRatingsEventId = ratings
+				.filter((r) => r.from.pubkey === $nostrAuth?.pubkey || r.to.pubkey === $nostrAuth?.pubkey)
+				.map((r) => {
+					return r.eventId;
+				});
 
-			return download('ratings.json', JSON.stringify(allMyRatings, null, '\t'));
+			let myRatingsEvents = events.filter((e) => myRatingsEventId.includes(e.id));
+
+			return download('ratings.json', JSON.stringify(myRatingsEvents, null, '\t'));
 		}
 
-		return download('ratings.json', JSON.stringify(filteredRatings, null, '\t'));
+		let filteredRatingsEventId = filteredRatings.map((r) => {
+			return r.eventId;
+		});
+
+		let filteredRatingsEvents = events.filter((e) => filteredRatingsEventId.includes(e.id));
+
+		return download('ratings.json', JSON.stringify(filteredRatingsEvents, null, '\t'));
 	};
 </script>
 
