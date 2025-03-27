@@ -12,9 +12,8 @@
 	import { onMount } from 'svelte';
 	import ZapModal from '$lib/components/ZapModal.svelte';
 	import ProfileAvatar from '$lib/components/ProfileAvatar.svelte';
-	import { Input, Select } from 'flowbite-svelte';
+	import { Input, Label, Select, P } from 'flowbite-svelte';
 	import type { Event } from 'nostr-tools';
-
 	let ZapModalComponent: ZapModal;
 
 	interface Rating {
@@ -172,7 +171,7 @@
 
 	<div class="flex w-full flex-wrap justify-center gap-4">
 		<div class="flex flex-col">
-			<label for="filterRating" class="font-semibold">Filter by Rating:</label>
+			<Label for="filterRating" class="font-semibold">Filter by Rating:</Label>
 			<Select
 				id="filterRating"
 				bind:value={filterRating}
@@ -187,14 +186,14 @@
 		</div>
 
 		<div class="flex flex-col">
-			<label for="filterBusiness" class="font-semibold">Filter by Had Business:</label>
+			<Label for="filterBusiness" class="font-semibold">Filter by Had Business:</Label>
 			<Select
 				id="filterBusiness"
 				bind:value={filterBusiness}
 				items={[
 					{ value: 'all', name: 'All' },
 					{ value: 'yes', name: '✅ Yes' },
-					{ value: 'no', name: 'No' }
+					{ value: 'no', name: '❌ No' }
 				]}
 				class="rounded border border-gray-300 bg-white px-2 py-1 text-black
 				       transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -202,7 +201,7 @@
 		</div>
 
 		<div class="flex flex-col">
-			<label for="filterFrom" class="font-semibold">Filter by Who Rated:</label>
+			<Label for="filterFrom" class="font-semibold">Filter by Who Rated:</Label>
 			<Input
 				id="filterFrom"
 				bind:value={filterFrom}
@@ -213,7 +212,7 @@
 		</div>
 
 		<div class="flex flex-col">
-			<label for="filterTo" class="font-semibold">Filter by Who Was Rated:</label>
+			<Label for="filterTo" class="font-semibold">Filter by Who Was Rated:</Label>
 			<Input
 				id="filterTo"
 				bind:value={filterTo}
@@ -315,7 +314,7 @@
 						{new Date(rating.date).toLocaleTimeString()}
 					</td>
 					<td>{rating.score ? '✅' : '❌'}</td>
-					<td>{rating.businessAlreadyDone ? '✅' : 'No'}</td>
+					<td>{rating.businessAlreadyDone ? '✅' : '❌'}</td>
 					<td>{rating.description}</td>
 					<td>
 						{#if rating.from.lud16}
