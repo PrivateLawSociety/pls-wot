@@ -1,9 +1,13 @@
 <script lang="ts">
-	import { Button, Checkbox, Input, Label, P, Toast } from "flowbite-svelte";
-	import { generateSecretKey, getPublicKey, nip19 } from "nostr-tools";
-	import { Buffer } from "buffer";
-	import { slide } from "svelte/transition";
-	import { nostrAuth } from "$lib/nostr";
+	import { Button, Checkbox, Input, Label, P, Toast } from 'flowbite-svelte';
+	import { generateSecretKey, getPublicKey, nip19 } from 'nostr-tools';
+	import { Buffer } from 'buffer';
+	import { slide } from 'svelte/transition';
+	import { nostrAuth } from '$lib/nostr';
+
+	import { page } from '$app/state';
+	const npubParam = page.url.searchParams.get('npub');
+	const urlParams = npubParam ? `?npub=${npubParam}` : '';
 
 	let privateKey = generateSecretKey();
 	let privateKeyStr = Buffer.from(privateKey).toString('hex');
@@ -18,13 +22,12 @@
 	let copiedPrivkey = false;
 </script>
 
-<div class="w-full flex flex-col justify-center items-center h-full gap-4 p-4">
+<div class="flex h-full w-full flex-col items-center justify-center gap-4 p-4">
 	<div class="flex justify-center">
 		<P align="center" size="4xl" weight="normal">Generated PLS Identity</P>
 	</div>
 
-	<div class="flex justify-center w-full flex-col items-center h-full gap-4">
-
+	<div class="flex h-full w-full flex-col items-center justify-center gap-4">
 		<div>
 			<Label class="mb-2">Public ID</Label>
 			<Input
@@ -41,7 +44,12 @@
 				}}
 			/>
 		</div>
-		<Toast class="dark:bg-slate-700 rounded-lg m-3 w-max" dismissable={false} bind:toastStatus={copiedPubkey} transition={slide}>
+		<Toast
+			class="m-3 w-max rounded-lg dark:bg-slate-700"
+			dismissable={false}
+			bind:toastStatus={copiedPubkey}
+			transition={slide}
+		>
 			Copied public ID to clipboard.
 		</Toast>
 
@@ -61,7 +69,12 @@
 				}}
 			/>
 		</div>
-		<Toast class="dark:bg-slate-700 rounded-lg m-3 w-max" dismissable={false} bind:toastStatus={copiedPrivkey} transition={slide}>
+		<Toast
+			class="m-3 w-max rounded-lg dark:bg-slate-700"
+			dismissable={false}
+			bind:toastStatus={copiedPrivkey}
+			transition={slide}
+		>
 			Copied secret key to clipboard.
 		</Toast>
 	</div>
@@ -70,7 +83,7 @@
 		I've stored my secret key in a safe and private place
 	</Checkbox>
 
-	<a href="/">
+	<a href={npubParam ? `/rate${urlParams}` : '/'}>
 		<Button disabled={!hasStoredKey} on:click={() => nostrAuth.loginWithPrivkey(privateKeyStr)}>
 			Continue
 		</Button>
