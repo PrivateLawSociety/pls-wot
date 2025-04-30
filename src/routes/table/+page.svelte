@@ -12,8 +12,10 @@
 	import { onMount } from 'svelte';
 	import ZapModal from '$lib/components/ZapModal.svelte';
 	import ProfileAvatar from '$lib/components/ProfileAvatar.svelte';
-	import { Input, Label, Select, P } from 'flowbite-svelte';
+	import { Input, Label, Select } from 'flowbite-svelte';
 	import type { Event } from 'nostr-tools';
+	import { page } from '$app/state';
+	import { replaceState } from '$app/navigation';
 	let ZapModalComponent: ZapModal;
 
 	interface Rating {
@@ -28,10 +30,14 @@
 
 	let ratings: Rating[] = [];
 
+	// Necessary to ensure that page is loaded before try to set any search param
+	// It ensures that replaceState would not be called before router initialization
+	let pageInitialized: boolean = false;
+
 	let filterRating: string = 'all';
 	let filterBusiness: string = 'all';
-	let filterFrom: string = '';
-	let filterTo: string = '';
+	let filterFrom: string = getRaterParam();
+	let filterTo: string = getRatedParam();
 
 	$: filteredRatings = ratings.filter((rating) => {
 		let ratingMatch = true;
@@ -63,9 +69,14 @@
 
 	$: ratings.sort((a, b) => b.date - a.date);
 
+	$: setRaterParam(filterFrom);
+	$: setRatedParam(filterTo);
+
 	const events: Event[] = [];
 
 	onMount(() => {
+		pageInitialized = true;
+
 		relayPool.subscribeMany(
 			relayList,
 			[
@@ -135,6 +146,41 @@
 		element.click();
 		document.body.removeChild(element);
 	};
+
+	function getRaterParam(): string {
+		return page.url.searchParams.get("rater") || "";
+	}
+
+	function setRaterParam(rater: string) {
+		// Ensure that page has initialized
+		if (!pageInitialized) return;
+
+		if (rater)
+			page.url.searchParams.set("rater", rater);
+		else
+			page.url.searchParams.delete("rater")
+		replaceState(page.url, page.state)
+	}
+
+	function getRatedParam(): string {
+		return page.url.searchParams.get("rated") || "";
+	}
+
+	function setRatedParam(rated: string) {
+		// Ensure that page has initialized
+		if (!pageInitialized) return;
+
+		if (rated)
+			page.url.searchParams.set("rated", rated);
+		else
+			page.url.searchParams.delete("rated");
+		replaceState(page.url, page.state)
+	}
+
+	async function copyLinkToClipboard() {
+		await navigator.clipboard.writeText(page.url.toString());
+		alert("Link copied to clipboard!");
+	}
 
 	const handleDownload = (myRatings: boolean = false) => {
 		if (myRatings) {
@@ -206,6 +252,7 @@
 				id="filterFrom"
 				bind:value={filterFrom}
 				placeholder="Enter Rater Key"
+				autocomplete="off"
 				class="rounded border border-gray-300 bg-white px-2 py-1 text-black
 				       transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
 			/>
@@ -217,6 +264,7 @@
 				id="filterTo"
 				bind:value={filterTo}
 				placeholder="Enter Rated Key"
+				autocomplete="off"
 				class="rounded border border-gray-300 bg-white px-2 py-1 text-black
 				       transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
 			/>
@@ -243,6 +291,20 @@
 						All My Reviews
 					</button>
 				{/if}
+			</div>
+		</div>
+
+		<div class="flex flex-col">
+			<label for="getFilterLinks" class="font-semibold">Get filters link:</label>
+
+			<div class="flex grid-cols gap-2">
+				<button
+					type="button"
+					class="rounded border border-gray-600 bg-gray-700 px-2 py-1 text-white transition-colors hover:bg-orange-600 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+					on:click={() => copyLinkToClipboard()}
+				>
+					Copy to clipboard
+				</button>
 			</div>
 		</div>
 	</div>
