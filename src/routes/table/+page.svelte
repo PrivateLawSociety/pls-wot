@@ -16,6 +16,8 @@
 	import type { Event } from 'nostr-tools';
 	import { page } from '$app/state';
 	import { replaceState } from '$app/navigation';
+	import { toasts } from 'svelte-toasts';
+
 	let ZapModalComponent: ZapModal;
 
 	interface Rating {
@@ -179,7 +181,10 @@
 
 	async function copyLinkToClipboard() {
 		await navigator.clipboard.writeText(page.url.toString());
-		alert("Link copied to clipboard!");
+		toasts.success({
+			title: "Copied!",
+			description: "Link copied to clipboard!",
+		});
 	}
 
 	const handleDownload = (myRatings: boolean = false) => {
