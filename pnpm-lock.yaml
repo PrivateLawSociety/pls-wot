@@ -44,6 +44,9 @@ importers:
       sigma:
         specifier: 3.0.0-beta.29
         version: 3.0.0-beta.29(graphology-types@0.24.7)
+      svelte-toasts:
+        specifier: ^1.1.2
+        version: 1.1.2
       tiny-secp256k1:
         specifier: ^2.2.3
         version: 2.2.3
@@ -1341,6 +1344,9 @@ packages:
       typescript:
         optional: true
 
+  svelte-toasts@1.1.2:
+    resolution: {integrity: sha512-m+yL4eEKXyJoyjTYaH1j1GFwF0Pi8YDqnVfwWPDmwi4712iZesv+TNCmToSNlav3R5Vkmc8ZBRkT8DOcu3sywQ==}
+
   svelte@4.2.19:
     resolution: {integrity: sha512-IY1rnGr6izd10B0A8LqsBfmlT5OILVuZ7XsI0vdGPEvuonFV7NYEUK4dAkm9Zg2q0Um92kYjTpS1CAP3Nh/KWw==}
     engines: {node: '>=16'}
@@ -2634,6 +2640,8 @@ snapshots:
       postcss: 8.5.2
       postcss-load-config: 4.0.2(postcss@8.5.2)
       typescript: 5.7.3
+
+  svelte-toasts@1.1.2: {}
 
   svelte@4.2.19:
     dependencies:
