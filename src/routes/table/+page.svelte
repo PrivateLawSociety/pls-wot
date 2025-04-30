@@ -190,7 +190,10 @@
 	const handleDownload = (myRatings: boolean = false) => {
 		if (myRatings) {
 			if (!$nostrAuth?.pubkey) {
-				alert('You must be logged');
+				toasts.error({
+					title: "Not logged in",
+					description: "You must be logged to perform this action",
+				});
 				return;
 			}
 
