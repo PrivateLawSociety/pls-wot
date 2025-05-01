@@ -107,8 +107,6 @@
 		// 		tags: []
 		// }, mySecKey)
 
-		console.log(event);
-
 		// TODO: Sign review, let user download it, and disabled 'send to nostr' button
 		// 'send to nostr' should be in a parameterized replaceable event (but just do ephemeral for now)
 
@@ -147,12 +145,11 @@
 
 	<Label class="flex w-1/2 flex-col">
 		Other person pubkey
-		<Input
-			class="border-2"
-			bind:value={otherPersonPubKey}
-			type="text"
-			readonly={otherPersonPubKey != ''}
-		/>
+		{#if npub}
+			<Input class="border-2" bind:value={otherPersonPubKey} type="text" readonly />
+		{:else}
+			<Input class="border-2" bind:value={otherPersonPubKey} type="text" />
+		{/if}
 	</Label>
 
 	<div class="flex w-1/2 flex-col">
