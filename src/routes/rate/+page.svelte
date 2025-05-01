@@ -147,7 +147,12 @@
 
 	<Label class="flex w-1/2 flex-col">
 		Other person pubkey
-		<Input class="border-2" bind:value={otherPersonPubKey} type="text" />
+		<Input
+			class="border-2"
+			bind:value={otherPersonPubKey}
+			type="text"
+			readonly={otherPersonPubKey != ''}
+		/>
 	</Label>
 
 	<div class="flex w-1/2 flex-col">
