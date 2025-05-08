@@ -179,6 +179,14 @@
 		replaceState(page.url, page.state)
 	}
 
+	async function copyNpub(npub: string) {
+		await navigator.clipboard.writeText(npub);
+		toasts.success({
+			title: "Copied NPUB!",
+			description: "NPUB copied to clipboard",
+		});
+	}
+
 	async function copyLinkToClipboard() {
 		await navigator.clipboard.writeText(page.url.toString());
 		toasts.success({
@@ -333,50 +341,52 @@
 			{#each filteredRatings as rating}
 				<tr>
 					<td>
-						<a href="https://njump.me/{rating.from.npub}" target="_blank">
-							<div class="flex items-center gap-4 px-2">
+						<div class="flex items-center gap-4 px-2">
+							<a href="https://njump.me/{rating.from.npub}" target="_blank">
 								<ProfileAvatar source={rating.from.picture} />
-
-								<div class="font-medium text-white">
-									<div>{rating.from.display_name || rating.from.name || ''}</div>
-
-									<div class="group relative">
+							</a>
+							<div class="font-medium text-white">
+								<div>{rating.from.display_name || rating.from.name || ''}</div>
+								<div class="group relative">
+									<button on:click={() => copyNpub(rating.from.npub)}>
 										<span class="block max-w-24 text-sm text-gray-400">
 											{`${rating.from.npub.slice(0, 5)}...${rating.from.npub.slice(-5)}`}
 										</span>
+									</button>
 
-										<span
-											class="absolute left-0 top-full z-10 hidden whitespace-nowrap rounded-md border border-white bg-gray-800 p-2 text-sm text-white group-hover:block"
-										>
-											{rating.from.npub}
-										</span>
-									</div>
+									<span
+										class="absolute left-0 top-full z-10 hidden whitespace-nowrap rounded-md border border-white bg-gray-800 p-2 text-sm text-white group-hover:block"
+									>
+										{rating.from.npub}
+									</span>
 								</div>
 							</div>
-						</a>
+						</div>
 					</td>
 					<td>
-						<a href="https://njump.me/{rating.to.npub}" target="_blank">
-							<div class="flex items-center gap-4 px-2">
+						<div class="flex items-center gap-4 px-2">
+							<a href="https://njump.me/{rating.to.npub}" target="_blank">
 								<ProfileAvatar source={rating.to.picture} />
+							</a>
 
-								<div class="font-medium text-white">
-									<div>{rating.to.display_name || rating.to.name || ''}</div>
+							<div class="font-medium text-white">
+								<div>{rating.to.display_name || rating.to.name || ''}</div>
 
-									<div class="group relative">
+								<div class="group relative">
+									<button on:click={() => copyNpub(rating.to.npub)}>
 										<span class="block max-w-24 text-sm text-gray-400">
 											{`${rating.to.npub.slice(0, 5)}...${rating.to.npub.slice(-5)}`}
 										</span>
+									</button>
 
-										<span
-											class="absolute left-0 top-full z-10 hidden whitespace-nowrap rounded-md border border-white bg-gray-800 p-2 text-sm text-white group-hover:block"
-										>
-											{rating.to.npub}
-										</span>
-									</div>
+									<span
+										class="absolute left-0 top-full z-10 hidden whitespace-nowrap rounded-md border border-white bg-gray-800 p-2 text-sm text-white group-hover:block"
+									>
+										{rating.to.npub}
+									</span>
 								</div>
 							</div>
-						</a>
+						</div>
 					</td>
 					<td>
 						{new Date(rating.date).toLocaleDateString()}
