@@ -1,4 +1,4 @@
-import { type Event } from "nostr-tools";
+import { type Event } from 'nostr-tools';
 
 // See https://kit.svelte.dev/docs/types#app
 // for information about these interfaces
@@ -24,4 +24,4 @@ declare global {
 	}
 }
 
-export { };
+export {};

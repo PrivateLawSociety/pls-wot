@@ -7,7 +7,7 @@
 		relayList,
 		relayPool,
 		type ProfileType,
-		type Rating,
+		type Rating
 	} from '$lib/nostr';
 	import { npubEncode } from 'nostr-tools/nip19';
 	import { onMount } from 'svelte';
@@ -141,48 +141,50 @@
 	};
 
 	function getRaterParam(): string {
-		return page.url.searchParams.get("rater") || "";
+		return page.url.searchParams.get('rater') || '';
 	}
 
 	function setRaterParam(rater: string) {
 		// Ensure that page has initialized
 		if (!pageInitialized) return;
 
-		if (rater)
-			page.url.searchParams.set("rater", rater);
-		else
-			page.url.searchParams.delete("rater")
-		replaceState(page.url, page.state)
+		if (rater) {
+			page.url.searchParams.set('rater', rater);
+		} else {
+			page.url.searchParams.delete('rater');
+		}
+		replaceState(page.url, page.state);
 	}
 
 	function getRatedParam(): string {
-		return page.url.searchParams.get("rated") || "";
+		return page.url.searchParams.get('rated') || '';
 	}
 
 	function setRatedParam(rated: string) {
 		// Ensure that page has initialized
 		if (!pageInitialized) return;
 
-		if (rated)
-			page.url.searchParams.set("rated", rated);
-		else
-			page.url.searchParams.delete("rated");
-		replaceState(page.url, page.state)
+		if (rated) {
+			page.url.searchParams.set('rated', rated);
+		} else {
+			page.url.searchParams.delete('rated');
+		}
+		replaceState(page.url, page.state);
 	}
 
 	async function copyNpub(npub: string) {
 		await navigator.clipboard.writeText(npub);
 		toasts.success({
-			title: "Copied NPUB!",
-			description: "NPUB copied to clipboard",
+			title: 'Copied NPUB!',
+			description: 'NPUB copied to clipboard'
 		});
 	}
 
 	async function copyLinkToClipboard() {
 		await navigator.clipboard.writeText(page.url.toString());
 		toasts.success({
-			title: "Copied!",
-			description: "Link copied to clipboard!",
+			title: 'Copied!',
+			description: 'Link copied to clipboard!'
 		});
 	}
 
@@ -190,8 +192,8 @@
 		if (myRatings) {
 			if (!$nostrAuth?.pubkey) {
 				toasts.error({
-					title: "Not logged in",
-					description: "You must be logged to perform this action",
+					title: 'Not logged in',
+					description: 'You must be logged to perform this action'
 				});
 				return;
 			}
@@ -304,7 +306,7 @@
 		<div class="flex flex-col">
 			<label for="getFilterLinks" class="font-semibold">Get filters link:</label>
 
-			<div class="flex grid-cols gap-2">
+			<div class="grid-cols flex gap-2">
 				<button
 					type="button"
 					class="rounded border border-gray-600 bg-gray-700 px-2 py-1 text-white transition-colors hover:bg-orange-600 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"

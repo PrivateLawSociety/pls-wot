@@ -1,15 +1,11 @@
 <script lang="ts">
-	import Graph from "graphology";
-	import {
-		Network,
-		type Node,
-		type Edge,
-	} from "vis-network";
-	import "vis-network/styles/vis-network.css";
-	import { DataSet } from "vis-data";
-	import { onMount } from "svelte";
+	import Graph from 'graphology';
+	import { Network, type Node, type Edge } from 'vis-network';
+	import 'vis-network/styles/vis-network.css';
+	import { DataSet } from 'vis-data';
+	import { onMount } from 'svelte';
 
-	import { dfsFromNode } from "graphology-traversal";
+	import { dfsFromNode } from 'graphology-traversal';
 	import {
 		getProfileMetadata,
 		nostrAuth,
@@ -17,14 +13,14 @@
 		relayList,
 		relayPool,
 		type ProfileType,
-		type Rating,
-	} from "$lib/nostr";
-	import type { SubCloser } from "nostr-tools/abstract-pool";
-	import { ReviewEvent } from "$lib";
-	import { npubEncode } from "nostr-tools/nip19";
-	import GraphRatingText from "$lib/components/GraphRatingText.svelte";
-	import { renderVirtualSvelteElement } from "$lib/rendering";
-	import { Input, Label } from "flowbite-svelte";
+		type Rating
+	} from '$lib/nostr';
+	import type { SubCloser } from 'nostr-tools/abstract-pool';
+	import { ReviewEvent } from '$lib';
+	import { npubEncode } from 'nostr-tools/nip19';
+	import GraphRatingText from '$lib/components/GraphRatingText.svelte';
+	import { renderVirtualSvelteElement } from '$lib/rendering';
+	import { Input, Label } from 'flowbite-svelte';
 
 	interface GraphRating extends Rating {
 		parentRatings: GraphRating[];
@@ -53,7 +49,11 @@
 		subscriptions.forEach((subscription) => subscription.close());
 		subscriptions.splice(0);
 
-		async function startEventHandling(pubkey: string, currentDepth: number, parentRating?: GraphRating): Promise<GraphRating[]> {
+		async function startEventHandling(
+			pubkey: string,
+			currentDepth: number,
+			parentRating?: GraphRating
+		): Promise<GraphRating[]> {
 			const baseRatings: GraphRating[] = [];
 
 			const subscription = relayPool.subscribeMany(
@@ -62,7 +62,7 @@
 					{
 						authors: [pubkey],
 						kinds: [ReviewEvent],
-						'#l': ['pls-wot-rating'],
+						'#l': ['pls-wot-rating']
 					}
 				],
 				{
@@ -72,13 +72,13 @@
 
 							const from: ProfileType = {
 								npub: npubEncode(c.from),
-								pubkey: e.pubkey,
-							}
+								pubkey: e.pubkey
+							};
 
 							const to: ProfileType = {
 								npub: npubEncode(c.to),
-								pubkey: c.to,
-							}
+								pubkey: c.to
+							};
 
 							const newRating: GraphRating = {
 								eventId: e.id,
@@ -90,7 +90,7 @@
 								description: c.description,
 								parentRatings: [],
 								childrenRatings: [],
-								currentDepth,
+								currentDepth
 							};
 
 							const ratingIndex = baseRatings.findIndex((r) => r.eventId === newRating.eventId);
@@ -99,23 +99,29 @@
 								const oldRating = baseRatings[ratingIndex];
 
 								if (parentRating) {
-									const parentRatingIndex = oldRating.parentRatings.findIndex((p) => p.eventId === parentRating.eventId);
+									const parentRatingIndex = oldRating.parentRatings.findIndex(
+										(p) => p.eventId === parentRating.eventId
+									);
 
-									if (parentRatingIndex >= 0)
-										oldRating.parentRatings[parentRatingIndex] = parentRating
-									else
+									if (parentRatingIndex >= 0) {
+										oldRating.parentRatings[parentRatingIndex] = parentRating;
+									} else {
 										oldRating.parentRatings.push(parentRating);
+									}
 								}
 
 								baseRatings[ratingIndex] = newRating;
 							} else {
-								if (parentRating)
-									newRating.parentRatings.push(parentRating);
+								if (parentRating) newRating.parentRatings.push(parentRating);
 
 								baseRatings.push(newRating);
 
 								if (currentDepth < depth) {
-									const childrenRatings = await startEventHandling(to.pubkey, currentDepth + 1, newRating);
+									const childrenRatings = await startEventHandling(
+										to.pubkey,
+										currentDepth + 1,
+										newRating
+									);
 									newRating.childrenRatings = childrenRatings;
 								}
 							}
@@ -135,7 +141,7 @@
 						} catch (err) {
 							console.error('Error processing the event:', err);
 						}
-					},
+					}
 				}
 			);
 
@@ -162,7 +168,9 @@
 
 		if (!graph.hasNode(pubkey)) {
 			const profileMetadata = await getProfileMetadata(pubkey);
-			const parsedMetadata = parseProfileFromJsonString(profileMetadata?.content || '{}', { pubkey });
+			const parsedMetadata = parseProfileFromJsonString(profileMetadata?.content || '{}', {
+				pubkey
+			});
 			const displayName = parsedMetadata.displayName || parsedMetadata.display_name;
 
 			const titleText = displayName ? `${displayName} (You)` : '(You)';
@@ -173,7 +181,7 @@
 				size: 96,
 				label: titleText,
 				title: titleText,
-				image: parsedMetadata.picture,
+				image: parsedMetadata.picture
 			});
 		}
 
@@ -196,19 +204,21 @@
 				y: -rating.currentDepth * 512,
 				size: 64,
 				title: displayName || 'Unknown (No profile name)',
-				image: profile.picture,
+				image: profile.picture
 			});
 		});
 
 		ratings.forEach((rating) => {
-			const ratingComponent = renderVirtualSvelteElement(GraphRatingText, { text: rating.description });
+			const ratingComponent = renderVirtualSvelteElement(GraphRatingText, {
+				text: rating.description
+			});
 
 			graph.mergeDirectedEdge(rating.from.pubkey, rating.to.pubkey, {
 				from: rating.from.pubkey,
 				to: rating.to.pubkey,
-				color: rating.score? 'green' : 'red',
+				color: rating.score ? 'green' : 'red',
 				dashes: rating.businessAlreadyDone ? undefined : [2, 2, 10, 10],
-				title: ratingComponent,
+				title: ratingComponent
 			});
 		});
 	}
@@ -216,52 +226,52 @@
 	$: if (pubkey) subscribeRatingEvents({ originalPubkey: pubkey, depth: 3 });
 
 	let graphContainer: HTMLDivElement;
-	
+
 	onMount(() => {
 		const data = {
 			nodes: new DataSet<Node>(),
-			edges: new DataSet<Edge>(),
-		}
+			edges: new DataSet<Edge>()
+		};
 
 		const network = new Network(graphContainer, data, {
 			physics: {
-        enabled: true,
-        repulsion: {
-            centralGravity: 0.1,
-            springLength: 100,
-            springConstant: 10 ** -4,
-            nodeDistance: 100, // Increase this value to create more space
-        },
-        solver: 'repulsion', // You can also try 'barnesHut' or 'hierarchicalRepulsion'
-    	},
+				enabled: true,
+				repulsion: {
+					centralGravity: 0.1,
+					springLength: 100,
+					springConstant: 10 ** -4,
+					nodeDistance: 100 // Increase this value to create more space
+				},
+				solver: 'repulsion' // You can also try 'barnesHut' or 'hierarchicalRepulsion'
+			},
 			nodes: {
 				shape: 'circularImage',
 				font: {
 					size: 40
-				},
+				}
 			},
 			edges: {
 				width: 5,
 				arrows: {
-					to: true,
-				},
+					to: true
+				}
 			},
 			autoResize: true,
-			interaction: { hover: true },
+			interaction: { hover: true }
 		});
 
 		// Necessary to handle popups
 		network.on('hoverEdge', () => {});
 		network.on('blurEdge', () => {});
 
-		network.moveTo({ position: { x: 0, y: 0 }, scale: 0.5 })
+		network.moveTo({ position: { x: 0, y: 0 }, scale: 0.5 });
 
 		graph.on('nodeAdded', (node) => {
 			data.nodes.add({
 				id: node.key,
-				...node.attributes,
+				...node.attributes
 			});
-		})
+		});
 
 		graph.on('nodeDropped', (node) => {
 			data.nodes.remove(node.key);
@@ -270,16 +280,16 @@
 		graph.on('nodeAttributesUpdated', (node) => {
 			data.nodes.update({
 				id: node.key,
-				...node.attributes,
+				...node.attributes
 			});
-		})
+		});
 
 		graph.on('edgeAdded', (edge) => {
 			data.edges.add({
 				id: edge.key,
-				...edge.attributes,
+				...edge.attributes
 			});
-		})
+		});
 
 		graph.on('edgeDropped', (edge) => {
 			data.edges.remove(edge.key);
@@ -288,55 +298,46 @@
 		graph.on('edgeAttributesUpdated', (edge) => {
 			data.edges.update({
 				id: edge.key,
-				...edge.attributes,
+				...edge.attributes
 			});
 		});
 
 		// removeIrrelevantEdges(graph, yourPubkey, otherPubkey);
-	})
+	});
 
 	function removeIrrelevantEdges(graph: Graph, sourceNode: string, targetNode: string) {
-		const reachableNodes = new Set<string>(
-			[sourceNode, targetNode]
+		const reachableNodes = new Set<string>([sourceNode, targetNode]);
+
+		dfsFromNode(
+			graph,
+			sourceNode,
+			(key) => {
+				reachableNodes.add(key);
+			},
+			{
+				mode: 'out'
+			}
 		);
 
-		dfsFromNode(graph, sourceNode, (key) => {
-			reachableNodes.add(key);
-		}, {
-			mode: "out"
-		})
-
-		graph.filterNodes((node) => 
-			!reachableNodes.has(node)
-		).forEach((node)=>{
-			graph.dropNode(node)
-		})
+		graph
+			.filterNodes((node) => !reachableNodes.has(node))
+			.forEach((node) => {
+				graph.dropNode(node);
+			});
 	}
 </script>
 
-<div class="flex flex-col items-center gap-8 w-full flex-wrap justify-center p-4">
+<div class="flex w-full flex-col flex-wrap items-center justify-center gap-8 p-4">
 	<div class="flex flex-col">
 		<Label for="filterFrom" class="font-semibold">Main rater npub</Label>
-		<Input
-			id="filterFrom"
-			placeholder="Enter main rater npub"
-			autocomplete="off"
-		/>
+		<Input id="filterFrom" placeholder="Enter main rater npub" autocomplete="off" />
 	</div>
 
 	<div>
 		<Label for="filterTo">
-			<Input
-				id="filterTo"
-				placeholder="Enter target npub"
-				autocomplete="off"
-			/>
+			<Input id="filterTo" placeholder="Enter target npub" autocomplete="off" />
 		</Label>
 	</div>
 </div>
 
-<div
-	bind:this={graphContainer}
-	class="bg-slate-400 w-full h-full"
-/>
-
+<div bind:this={graphContainer} class="h-full w-full bg-slate-400" />

@@ -49,7 +49,10 @@ export interface ProfileType {
 	displayName?: string;
 }
 
-export function parseProfileFromJsonString(content: string, profile: Partial<ProfileType> & { pubkey: string; }) {
+export function parseProfileFromJsonString(
+	content: string,
+	profile: Partial<ProfileType> & { pubkey: string }
+) {
 	let metadata = {} as any;
 	metadata = JSON.parse(content || '{}');
 

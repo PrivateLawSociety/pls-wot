@@ -3,10 +3,10 @@ import type { Config } from 'tailwindcss';
 export default {
 	content: [
 		'./src/**/*.{html,js,svelte,ts}',
-		'./node_modules/flowbite-svelte/**/*.{html,js,svelte,ts}',
+		'./node_modules/flowbite-svelte/**/*.{html,js,svelte,ts}'
 	],
 
-	darkMode: "class",
+	darkMode: 'class',
 
 	theme: {
 		extend: {
@@ -22,11 +22,11 @@ export default {
 					600: '#d97706',
 					700: '#b45309',
 					800: '#92400e',
-					900: '#78350f',
-				},
+					900: '#78350f'
+				}
 			}
 		}
 	},
 
-	plugins: [require('flowbite/plugin')],
+	plugins: [require('flowbite/plugin')]
 } as Config;
