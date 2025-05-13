@@ -181,7 +181,7 @@
 				size: 96,
 				label: titleText,
 				title: titleText,
-				image: parsedMetadata.picture
+				image: parsedMetadata.picture || '/avatar.svg',
 			});
 		}
 
@@ -204,7 +204,7 @@
 				y: -rating.currentDepth * 512,
 				size: 64,
 				title: displayName || 'Unknown (No profile name)',
-				image: profile.picture
+				image: profile.picture || '/avatar.svg',
 			});
 		});
 
@@ -248,7 +248,9 @@
 				shape: 'circularImage',
 				font: {
 					size: 40
-				}
+				},
+				brokenImage: '/avatar.svg',
+				color: '#6b7891',
 			},
 			edges: {
 				width: 5,
