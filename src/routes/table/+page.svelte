@@ -6,7 +6,8 @@
 		parseProfileFromJsonString,
 		relayList,
 		relayPool,
-		type ProfileType
+		type ProfileType,
+		type Rating,
 	} from '$lib/nostr';
 	import { npubEncode } from 'nostr-tools/nip19';
 	import { onMount } from 'svelte';
@@ -19,16 +20,6 @@
 	import { toasts } from 'svelte-toasts';
 
 	let ZapModalComponent: ZapModal;
-
-	interface Rating {
-		eventId: string;
-		from: ProfileType;
-		to: ProfileType;
-		date: number;
-		score: boolean;
-		businessAlreadyDone: boolean;
-		description: string;
-	}
 
 	let ratings: Rating[] = [];
 

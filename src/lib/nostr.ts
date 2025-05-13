@@ -25,6 +25,16 @@ export let relayList = [
 	'wss://nos.lol'
 ];
 
+export interface Rating {
+	eventId: string;
+	from: ProfileType;
+	to: ProfileType;
+	date: number;
+	score: boolean;
+	businessAlreadyDone: boolean;
+	description: string;
+}
+
 export interface ProfileType {
 	npub: string;
 	name?: string;
