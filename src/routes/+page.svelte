@@ -15,6 +15,9 @@
 		<a href="/rate">
 			<Button class="w-48 m:w-48">Give rating</Button>
 		</a>
+		<a href="/graph">
+			<Button class="w-48 m:w-48">View your graph</Button>
+		</a>
 	{:else}
 		<a href="/login">
 			<Button class="w-48 m:w-64">Login</Button>
