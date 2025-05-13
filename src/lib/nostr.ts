@@ -8,7 +8,7 @@ import {
 	finalizeEvent
 } from 'nostr-tools';
 import { Metadata } from 'nostr-tools/kinds';
-import { decode } from 'nostr-tools/nip19';
+import { decode, npubEncode } from 'nostr-tools/nip19';
 import { getZapEndpoint, makeZapRequest } from 'nostr-tools/nip57';
 
 import { get, writable } from 'svelte/store';
@@ -39,11 +39,15 @@ export interface ProfileType {
 	displayName?: string;
 }
 
-export function parseProfileFromJsonString(content: string, profile: ProfileType) {
+export function parseProfileFromJsonString(content: string, profile: Partial<ProfileType> & { pubkey: string; }) {
 	let metadata = {} as any;
 	metadata = JSON.parse(content || '{}');
 
-	const targetProfile = Object.assign({}, profile);
+	if (!profile.npub) {
+		profile.npub = npubEncode(profile.pubkey);
+	}
+
+	const targetProfile = Object.assign({}, profile) as ProfileType;
 
 	targetProfile.name = metadata?.name || '';
 	targetProfile.picture = metadata?.picture || '';
