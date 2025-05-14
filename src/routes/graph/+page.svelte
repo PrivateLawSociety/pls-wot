@@ -243,22 +243,20 @@
 	}
 
 	async function addSelfNode({ pubkey }: AddSelfNodeParams) {
-		if (!graph.hasNode(pubkey)) {
-			const profileMetadata = await getProfileMetadata(pubkey);
-			const parsedMetadata = parseProfileFromJsonString(profileMetadata?.content || '{}', {
-				pubkey
-			});
-			const displayName = parsedMetadata.displayName || parsedMetadata.display_name;
+		const profileMetadata = await getProfileMetadata(pubkey);
+		const parsedMetadata = parseProfileFromJsonString(profileMetadata?.content || '{}', {
+			pubkey
+		});
+		const displayName = parsedMetadata.displayName || parsedMetadata.display_name;
 
-			const titleText = displayName ? `${displayName} (You)` : '(You)';
+		const titleText = displayName ? `${displayName} (You)` : '(You)';
 
-			graph.addNode(pubkey, {
-				size: 96,
-				label: titleText,
-				title: titleText,
-				image: parsedMetadata.picture || '/avatar.svg'
-			});
-		}
+		graph.mergeNode(pubkey, {
+			size: 96,
+			label: titleText,
+			title: titleText,
+			image: parsedMetadata.picture || '/avatar.svg'
+		});
 	}
 
 	$: if (pubkey) addSelfNode({ pubkey });
@@ -268,21 +266,31 @@
 	}
 
 	async function populateGraph({ rating }: PopupateGraphParams) {
-		if (ratings.length === 0) return;
-
 		const profile = rating.to;
 
 		(() => {
-			if (graph.hasNode(profile.pubkey)) return;
+			if (profile.pubkey === pubkey) return;
 
-			const displayName = profile.displayName || profile.display_name || profile.name;
+			const username = profile.displayName || profile.display_name || profile.name;
 
-			graph.addNode(profile.pubkey, {
-				label: displayName || 'Unknown (No profile name)',
-				size: 64,
-				title: displayName || 'Unknown (No profile name)',
-				image: profile.picture || '/avatar.svg'
-			});
+			const displayName = username || 'Unknown (No profile name)';
+
+			const image = profile.picture || '/avatar.svg';
+
+			if (graph.hasNode(profile.pubkey)) {
+				graph.mergeNode(profile.pubkey, {
+					label: displayName,
+					title: displayName,
+					image
+				});
+			} else {
+				graph.addNode(profile.pubkey, {
+					label: displayName,
+					size: 64,
+					title: displayName,
+					image
+				});
+			}
 		})();
 
 		const ratingComponent = renderVirtualSvelteElement(GraphRatingText, {
