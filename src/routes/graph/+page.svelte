@@ -30,7 +30,7 @@
 
 	const depth = 3;
 
-	const subscriptions: SubCloser[] = [];
+	const subscriptions: Record<string, SubCloser> = {};
 
 	let ratings: GraphRating[] = [];
 
@@ -131,8 +131,11 @@
 
 	async function subscribeRatingEvents({ depth, originalPubkey }: SubscribeRatingEventsParams) {
 		// Empty older subscriptions in favor of new ones (ideally it will never occurs)
-		subscriptions.forEach((subscription) => subscription.close());
-		subscriptions.splice(0);
+		for (const pubkey of Object.keys(subscriptions)) {
+			const subscription = subscriptions[pubkey];
+			subscription.close();
+			delete subscriptions[pubkey];
+		}
 
 		async function startEventHandling(
 			pubkey: string,
@@ -141,96 +144,101 @@
 		): Promise<GraphRating[]> {
 			const baseRatings: GraphRating[] = [];
 
-			const subscription = relayPool.subscribeMany(
-				relayList,
-				[
+			const subscription =
+				subscriptions[pubkey] ||
+				relayPool.subscribeMany(
+					relayList,
+					[
+						{
+							authors: [pubkey],
+							kinds: [ReviewEvent],
+							'#l': ['pls-wot-rating']
+						}
+					],
 					{
-						authors: [pubkey],
-						kinds: [ReviewEvent],
-						'#l': ['pls-wot-rating']
-					}
-				],
-				{
-					async onevent(e) {
-						try {
-							const c = JSON.parse(e.content);
+						async onevent(e) {
+							try {
+								const c = JSON.parse(e.content);
 
-							const from: ProfileType = {
-								npub: nip19.npubEncode(c.from),
-								pubkey: e.pubkey
-							};
+								const from: ProfileType = {
+									npub: nip19.npubEncode(c.from),
+									pubkey: e.pubkey
+								};
 
-							const to: ProfileType = {
-								npub: nip19.npubEncode(c.to),
-								pubkey: c.to
-							};
+								const to: ProfileType = {
+									npub: nip19.npubEncode(c.to),
+									pubkey: c.to
+								};
 
-							const newRating: GraphRating = {
-								eventId: e.id,
-								from,
-								to,
-								date: e.created_at * 1000,
-								score: c.score,
-								businessAlreadyDone: c.businessAlreadyDone,
-								description: c.description,
-								parentRatings: [],
-								childrenRatings: [],
-								currentDepth
-							};
+								const newRating: GraphRating = {
+									eventId: e.id,
+									from,
+									to,
+									date: e.created_at * 1000,
+									score: c.score,
+									businessAlreadyDone: c.businessAlreadyDone,
+									description: c.description,
+									parentRatings: [],
+									childrenRatings: [],
+									currentDepth
+								};
 
-							const ratingIndex = baseRatings.findIndex((r) => r.eventId === newRating.eventId);
+								const ratingIndex = baseRatings.findIndex((r) => r.eventId === newRating.eventId);
 
-							if (ratingIndex >= 0) {
-								const oldRating = baseRatings[ratingIndex];
+								if (ratingIndex >= 0) {
+									const oldRating = baseRatings[ratingIndex];
 
-								if (parentRating) {
-									const parentRatingIndex = oldRating.parentRatings.findIndex(
-										(p) => p.eventId === parentRating.eventId
-									);
+									if (parentRating) {
+										const parentRatingIndex = oldRating.parentRatings.findIndex(
+											(p) => p.eventId === parentRating.eventId
+										);
 
-									if (parentRatingIndex >= 0) {
-										oldRating.parentRatings[parentRatingIndex] = parentRating;
-									} else {
-										oldRating.parentRatings.push(parentRating);
+										if (parentRatingIndex >= 0) {
+											oldRating.parentRatings[parentRatingIndex] = parentRating;
+										} else {
+											oldRating.parentRatings.push(parentRating);
+										}
+									}
+
+									baseRatings[ratingIndex] = newRating;
+								} else {
+									if (parentRating) newRating.parentRatings.push(parentRating);
+
+									baseRatings.push(newRating);
+
+									if (currentDepth < depth) {
+										const childrenRatings = await startEventHandling(
+											to.pubkey,
+											currentDepth + 1,
+											newRating
+										);
+										newRating.childrenRatings = childrenRatings;
 									}
 								}
 
-								baseRatings[ratingIndex] = newRating;
-							} else {
-								if (parentRating) newRating.parentRatings.push(parentRating);
+								Promise.all([getProfileMetadata(c.from), getProfileMetadata(c.to)])
+									.then(([fromEvent, toEvent]) => {
+										Object.assign(
+											from,
+											parseProfileFromJsonString(fromEvent?.content || '{}', from)
+										);
+										Object.assign(to, parseProfileFromJsonString(toEvent?.content || '{}', to));
 
-								baseRatings.push(newRating);
+										populateGraph({ rating: newRating });
+									})
+									.catch((error) => {
+										console.error('Error when processing the profile metadata:', error);
+									});
 
-								if (currentDepth < depth) {
-									const childrenRatings = await startEventHandling(
-										to.pubkey,
-										currentDepth + 1,
-										newRating
-									);
-									newRating.childrenRatings = childrenRatings;
-								}
+								populateGraph({ rating: newRating });
+							} catch (err) {
+								console.error('Error processing the event:', err);
 							}
-
-							await Promise.all([getProfileMetadata(c.from), getProfileMetadata(c.to)])
-								.then(([fromEvent, toEvent]) => {
-									Object.assign(from, parseProfileFromJsonString(fromEvent?.content || '{}', from));
-
-									Object.assign(to, parseProfileFromJsonString(toEvent?.content || '{}', to));
-								})
-								.catch((error) => {
-									console.error('Error when processing the profile metadata:', error);
-								});
-
-							populateGraph({ rating: newRating });
-							// renderGraph({ pubkey: originalPubkey, ratings });
-						} catch (err) {
-							console.error('Error processing the event:', err);
 						}
 					}
-				}
-			);
+				);
 
-			subscriptions.push(subscription);
+			subscriptions[pubkey] = subscription;
 
 			return baseRatings;
 		}
