@@ -396,15 +396,40 @@
 	function removeIrrelevantEdges({ sourcePubkey, targetPubkey }: RemoveIrrelevantEdgesParams) {
 		const relevantPaths = allSimplePaths(graph, sourcePubkey, targetPubkey);
 
-		const reachableNodes = new Set<string>();
+		const relevantNodes = new Set<string>();
+		const relevantEdgeCombinations = new Set<string>();
 
-		relevantPaths.forEach((nodeGroup) => nodeGroup.forEach((node) => reachableNodes.add(node)));
+		relevantPaths.forEach((nodeGroup) => nodeGroup.forEach((node) => relevantNodes.add(node)));
+
+		relevantPaths.forEach((path) =>
+			path.slice(1).forEach((node, i) => {
+				const previousNodeIndex = i;
+
+				const previousNode = path[previousNodeIndex];
+
+				const edgeCombination = `${previousNode}:${node}`;
+
+				relevantEdgeCombinations.add(edgeCombination);
+			})
+		);
 
 		graph
-			.filterNodes((node) => !reachableNodes.has(node))
+			.filterNodes((node) => !relevantNodes.has(node))
 			.forEach((node) => {
 				graph.dropNode(node);
 			});
+
+		const edgesToMaintain = graph.filterEdges((edge) => {
+			const edgeData = graph.getEdgeAttributes(edge);
+
+			const edgeIndex = `${edgeData.from}:${edgeData.to}`;
+
+			return relevantEdgeCombinations.has(edgeIndex);
+		});
+
+		graph
+			.filterEdges((edge) => !edgesToMaintain.includes(edge))
+			.forEach((edge) => graph.dropEdge(edge));
 	}
 
 	$: if (pubkey && targetPubkey)
