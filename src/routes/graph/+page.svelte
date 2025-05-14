@@ -322,10 +322,10 @@
 				repulsion: {
 					centralGravity: 0.1,
 					springLength: 100,
-					springConstant: 10 ** -4,
-					nodeDistance: 100 // Increase this value to create more space
+					springConstant: 10 ** -5,
+					nodeDistance: 150
 				},
-				solver: 'repulsion' // You can also try 'barnesHut' or 'hierarchicalRepulsion'
+				solver: 'repulsion'
 			},
 			nodes: {
 				shape: 'circularImage',
