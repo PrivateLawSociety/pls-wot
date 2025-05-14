@@ -32,9 +32,9 @@ importers:
       graphology:
         specifier: ^0.25.4
         version: 0.25.4(graphology-types@0.24.7)
-      graphology-traversal:
-        specifier: ^0.3.1
-        version: 0.3.1(graphology-types@0.24.7)
+      graphology-simple-path:
+        specifier: ^0.2.0
+        version: 0.2.0(graphology-types@0.24.7)
       nostr-tools:
         specifier: ^2.10.4
         version: 2.10.4(typescript@5.7.3)
@@ -802,18 +802,18 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
-  graphology-indices@0.17.0:
-    resolution: {integrity: sha512-A7RXuKQvdqSWOpn7ZVQo4S33O0vCfPBnUSf7FwE0zNCasqwZVUaCXePuWo5HBpWw68KJcwObZDHpFk6HKH6MYQ==}
-    peerDependencies:
-      graphology-types: '>=0.20.0'
-
-  graphology-traversal@0.3.1:
-    resolution: {integrity: sha512-lGLrLKEDKtNgAKgHVhVftKf3cb/nuWwuVPQZHXRnN90JWn0RSjco/s+NB2ARSlMapEMlbnPgv6j++427yTnU3Q==}
+  graphology-simple-path@0.2.0:
+    resolution: {integrity: sha512-4cGMWbVuJM0zlKDUx6dS6JGGLddizDPe8PsTokXVz2eTeHYg07qa5TgwIco15ta2RMM05+xy8N1mFnpS85y0kw==}
     peerDependencies:
       graphology-types: '>=0.20.0'
 
   graphology-types@0.24.7:
     resolution: {integrity: sha512-tdcqOOpwArNjEr0gNQKCXwaNCWnQJrog14nJNQPeemcLnXQUUGrsCWpWkVKt46zLjcS6/KGoayeJfHHyPDlvwA==}
+
+  graphology-utils@1.8.0:
+    resolution: {integrity: sha512-Pa7SW30OMm8fVtyH49b3GJ/uxlMHGfXly50wIhlcc7ZoX9ahZa7sPBz+obo4WZClrRV6wh3tIu0GJoI42eao1A==}
+    peerDependencies:
+      graphology-types: '>=0.19.0'
 
   graphology-utils@2.5.2:
     resolution: {integrity: sha512-ckHg8MXrXJkOARk56ZaSCM1g1Wihe2d6iTmz1enGOz4W/l831MBCKSayeFQfowgF8wd+PQ4rlch/56Vs/VZLDQ==}
@@ -2213,19 +2213,17 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
-  graphology-indices@0.17.0(graphology-types@0.24.7):
+  graphology-simple-path@0.2.0(graphology-types@0.24.7):
     dependencies:
       graphology-types: 0.24.7
-      graphology-utils: 2.5.2(graphology-types@0.24.7)
+      graphology-utils: 1.8.0(graphology-types@0.24.7)
       mnemonist: 0.39.8
 
-  graphology-traversal@0.3.1(graphology-types@0.24.7):
-    dependencies:
-      graphology-indices: 0.17.0(graphology-types@0.24.7)
-      graphology-types: 0.24.7
-      graphology-utils: 2.5.2(graphology-types@0.24.7)
-
   graphology-types@0.24.7: {}
+
+  graphology-utils@1.8.0(graphology-types@0.24.7):
+    dependencies:
+      graphology-types: 0.24.7
 
   graphology-utils@2.5.2(graphology-types@0.24.7):
     dependencies:

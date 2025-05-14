@@ -5,7 +5,7 @@
 	import { DataSet } from 'vis-data';
 	import { onMount } from 'svelte';
 
-	import { dfsFromNode } from 'graphology-traversal';
+	import { allSimplePaths } from 'graphology-simple-path';
 	import {
 		getProfileMetadata,
 		nostrAuth,
@@ -17,10 +17,10 @@
 	} from '$lib/nostr';
 	import type { SubCloser } from 'nostr-tools/abstract-pool';
 	import { ReviewEvent } from '$lib';
-	import { npubEncode } from 'nostr-tools/nip19';
+	import { nip19 } from 'nostr-tools';
 	import GraphRatingText from '$lib/components/GraphRatingText.svelte';
 	import { renderVirtualSvelteElement } from '$lib/rendering';
-	import { Input, Label } from 'flowbite-svelte';
+	import { Helper, Input, Label } from 'flowbite-svelte';
 
 	interface GraphRating extends Rating {
 		parentRatings: GraphRating[];
@@ -28,15 +28,101 @@
 		currentDepth: number;
 	}
 
-	let ratings: GraphRating[] = [];
+	const depth = 3;
 
 	const subscriptions: SubCloser[] = [];
 
-	let ratingsCount: number = 0;
+	let ratings: GraphRating[] = [];
 
-	let pubkey: string | undefined = nostrAuth.getPubkey();
+	let pubkey: string | undefined = loadPubkey();
+
+	let npub: string | undefined = loadNpub();
+
+	let processNpubError: boolean = false;
 
 	let graph: Graph<Node, Edge> = new Graph();
+
+	function loadNpub() {
+		const pubkey = nostrAuth.getPubkey();
+
+		if (!pubkey) return;
+
+		return nip19.npubEncode(pubkey);
+	}
+
+	function loadPubkey() {
+		return nostrAuth.getPubkey();
+	}
+
+	function updatePubkey(npub: string | undefined) {
+		function clearPubkey(error: boolean) {
+			processNpubError = error;
+			pubkey = undefined;
+		}
+
+		function setPubkey(newPubkey: string) {
+			pubkey = newPubkey;
+			processNpubError = false;
+		}
+
+		if (!npub) {
+			return void clearPubkey(false);
+		}
+
+		try {
+			const newPubkey = nip19.decode(npub);
+
+			if (newPubkey.type !== 'npub') {
+				return clearPubkey(true);
+			}
+
+			setPubkey(newPubkey.data);
+		} catch {
+			clearPubkey(true);
+		}
+	}
+
+	$: updatePubkey(npub);
+
+	let targetPubkey: string | undefined = undefined;
+
+	let targetNpub: string | undefined = undefined;
+
+	let processTargetNpubError: boolean = false;
+
+	let updatedTargetPubkey: boolean = false;
+
+	function updateTargetPubkey(targetNpub: string | undefined) {
+		function clearPubkey(error: boolean) {
+			processTargetNpubError = error;
+			targetPubkey = undefined;
+			updatedTargetPubkey = true;
+		}
+
+		function setPubkey(newPubkey: string) {
+			targetPubkey = newPubkey;
+			processTargetNpubError = false;
+			updatedTargetPubkey = true;
+		}
+
+		if (!targetNpub) {
+			return void clearPubkey(false);
+		}
+
+		try {
+			const newTargetPubkey = nip19.decode(targetNpub);
+
+			if (newTargetPubkey.type !== 'npub') {
+				return void clearPubkey(true);
+			}
+
+			setPubkey(newTargetPubkey.data);
+		} catch {
+			clearPubkey(true);
+		}
+	}
+
+	$: updateTargetPubkey(targetNpub);
 
 	interface SubscribeRatingEventsParams {
 		depth: number;
@@ -44,7 +130,6 @@
 	}
 
 	async function subscribeRatingEvents({ depth, originalPubkey }: SubscribeRatingEventsParams) {
-		ratingsCount = 0;
 		// Empty older subscriptions in favor of new ones (ideally it will never occurs)
 		subscriptions.forEach((subscription) => subscription.close());
 		subscriptions.splice(0);
@@ -71,12 +156,12 @@
 							const c = JSON.parse(e.content);
 
 							const from: ProfileType = {
-								npub: npubEncode(c.from),
+								npub: nip19.npubEncode(c.from),
 								pubkey: e.pubkey
 							};
 
 							const to: ProfileType = {
-								npub: npubEncode(c.to),
+								npub: nip19.npubEncode(c.to),
 								pubkey: c.to
 							};
 
@@ -136,7 +221,7 @@
 									console.error('Error when processing the profile metadata:', error);
 								});
 
-							populateGraph({ pubkey: originalPubkey, ratings: baseRatings });
+							populateGraph({ rating: newRating });
 							// renderGraph({ pubkey: originalPubkey, ratings });
 						} catch (err) {
 							console.error('Error processing the event:', err);
@@ -153,19 +238,11 @@
 		ratings = await startEventHandling(originalPubkey, 0);
 	}
 
-	interface RenderGraphParams {
-		pubkey?: string;
-		ratings: GraphRating[];
-	}
-
-	interface PopupateGraphParams {
+	interface AddSelfNodeParams {
 		pubkey: string;
-		ratings: GraphRating[];
 	}
 
-	async function populateGraph({ pubkey, ratings }: PopupateGraphParams) {
-		if (ratings.length === 0) return;
-
+	async function addSelfNode({ pubkey }: AddSelfNodeParams) {
 		if (!graph.hasNode(pubkey)) {
 			const profileMetadata = await getProfileMetadata(pubkey);
 			const parsedMetadata = parseProfileFromJsonString(profileMetadata?.content || '{}', {
@@ -176,54 +253,52 @@
 			const titleText = displayName ? `${displayName} (You)` : '(You)';
 
 			graph.addNode(pubkey, {
-				x: 0,
-				y: 256,
 				size: 96,
 				label: titleText,
 				title: titleText,
-				image: parsedMetadata.picture || '/avatar.svg',
+				image: parsedMetadata.picture || '/avatar.svg'
 			});
 		}
+	}
 
-		ratings.forEach((rating, i) => {
-			const profile = rating.to;
+	$: if (pubkey) addSelfNode({ pubkey });
 
+	interface PopupateGraphParams {
+		rating: GraphRating;
+	}
+
+	async function populateGraph({ rating }: PopupateGraphParams) {
+		if (ratings.length === 0) return;
+
+		const profile = rating.to;
+
+		(() => {
 			if (graph.hasNode(profile.pubkey)) return;
-
-			const evenRatings = ratings.length % 2 === 0;
-
-			const middle = ratings.length / 2;
-
-			const x = evenRatings ? i - middle + 0.5 : i - middle;
 
 			const displayName = profile.displayName || profile.display_name || profile.name;
 
 			graph.addNode(profile.pubkey, {
 				label: displayName || 'Unknown (No profile name)',
-				x: x * 256,
-				y: -rating.currentDepth * 512,
 				size: 64,
 				title: displayName || 'Unknown (No profile name)',
-				image: profile.picture || '/avatar.svg',
+				image: profile.picture || '/avatar.svg'
 			});
+		})();
+
+		const ratingComponent = renderVirtualSvelteElement(GraphRatingText, {
+			text: rating.description
 		});
 
-		ratings.forEach((rating) => {
-			const ratingComponent = renderVirtualSvelteElement(GraphRatingText, {
-				text: rating.description
-			});
-
-			graph.mergeDirectedEdge(rating.from.pubkey, rating.to.pubkey, {
-				from: rating.from.pubkey,
-				to: rating.to.pubkey,
-				color: rating.score ? 'green' : 'red',
-				dashes: rating.businessAlreadyDone ? undefined : [2, 2, 10, 10],
-				title: ratingComponent
-			});
+		graph.mergeDirectedEdge(rating.from.pubkey, rating.to.pubkey, {
+			from: rating.from.pubkey,
+			to: rating.to.pubkey,
+			color: rating.score ? 'green' : 'red',
+			dashes: rating.businessAlreadyDone ? undefined : [2, 2, 10, 10],
+			title: ratingComponent
 		});
 	}
 
-	$: if (pubkey) subscribeRatingEvents({ originalPubkey: pubkey, depth: 3 });
+	$: if (pubkey) subscribeRatingEvents({ originalPubkey: pubkey, depth });
 
 	let graphContainer: HTMLDivElement;
 
@@ -250,7 +325,7 @@
 					size: 40
 				},
 				brokenImage: '/avatar.svg',
-				color: '#6b7891',
+				color: '#6b7891'
 			},
 			edges: {
 				width: 5,
@@ -303,23 +378,19 @@
 				...edge.attributes
 			});
 		});
-
-		// removeIrrelevantEdges(graph, yourPubkey, otherPubkey);
 	});
 
-	function removeIrrelevantEdges(graph: Graph, sourceNode: string, targetNode: string) {
-		const reachableNodes = new Set<string>([sourceNode, targetNode]);
+	interface RemoveIrrelevantEdgesParams {
+		sourcePubkey: string;
+		targetPubkey: string;
+	}
 
-		dfsFromNode(
-			graph,
-			sourceNode,
-			(key) => {
-				reachableNodes.add(key);
-			},
-			{
-				mode: 'out'
-			}
-		);
+	function removeIrrelevantEdges({ sourcePubkey, targetPubkey }: RemoveIrrelevantEdgesParams) {
+		const relevantPaths = allSimplePaths(graph, sourcePubkey, targetPubkey);
+
+		const reachableNodes = new Set<string>();
+
+		relevantPaths.forEach((nodeGroup) => nodeGroup.forEach((node) => reachableNodes.add(node)));
 
 		graph
 			.filterNodes((node) => !reachableNodes.has(node))
@@ -327,19 +398,64 @@
 				graph.dropNode(node);
 			});
 	}
+
+	$: if (pubkey && targetPubkey)
+		removeIrrelevantEdges({
+			sourcePubkey: pubkey,
+			targetPubkey: targetPubkey
+		});
+
+	interface RepopulateGraph {
+		ratings: GraphRating[];
+	}
+
+	async function repopulateGraph({ ratings }: RepopulateGraph) {
+		await Promise.all(
+			ratings.map(async (rating) => {
+				await populateGraph({ rating });
+
+				await repopulateGraph({ ratings: rating.childrenRatings });
+			})
+		);
+	}
+
+	$: if (pubkey && !targetPubkey && updatedTargetPubkey) repopulateGraph({ ratings });
 </script>
 
-<div class="flex w-full flex-col flex-wrap items-center justify-center gap-8 p-4">
-	<div class="flex flex-col">
-		<Label for="filterFrom" class="font-semibold">Main rater npub</Label>
-		<Input id="filterFrom" placeholder="Enter main rater npub" autocomplete="off" />
-	</div>
+<div class="flex flex-col items-center gap-8 pt-4">
+	<div class="flex w-full flex-wrap justify-center gap-4">
+		<div class="flex flex-col">
+			<Label for="filterFrom" class="font-semibold">Main rater npub</Label>
+			<Input
+				id="filterFrom"
+				placeholder="Enter main rater npub"
+				bind:value={npub}
+				autocomplete="off"
+			/>
+			{#if processNpubError}
+				<Helper class="mt-2" color="red">
+					<span class="font-bold">Invalid npub</span>
+				</Helper>
+			{/if}
+		</div>
 
-	<div>
-		<Label for="filterTo">
-			<Input id="filterTo" placeholder="Enter target npub" autocomplete="off" />
-		</Label>
+		<div>
+			<Label for="filterTo">Target rated npub</Label>
+			<Input
+				id="filterTo"
+				placeholder="Enter target npub"
+				bind:value={targetNpub}
+				autocomplete="off"
+			/>
+			{#if processTargetNpubError}
+				<Helper class="mt-2" color="red">
+					<span>Invalid npub</span>
+				</Helper>
+			{/if}
+		</div>
 	</div>
 </div>
+
+<div class="flex w-full flex-col flex-wrap items-center justify-center gap-8 p-4"></div>
 
 <div bind:this={graphContainer} class="h-full w-full bg-slate-400" />
