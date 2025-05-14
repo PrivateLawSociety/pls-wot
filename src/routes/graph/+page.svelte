@@ -30,7 +30,13 @@
 
 	const depth = 3;
 
+	const nodesSize = 64;
+
+	const centralNodesSize = 128;
+
 	const subscriptions: Record<string, SubCloser> = {};
+
+	const graph: Graph<Node, Edge> = new Graph();
 
 	let ratings: GraphRating[] = [];
 
@@ -39,8 +45,6 @@
 	let npub: string | undefined = loadNpub();
 
 	let processNpubError: boolean = false;
-
-	let graph: Graph<Node, Edge> = new Graph();
 
 	function loadNpub() {
 		const pubkey = nostrAuth.getPubkey();
@@ -90,19 +94,15 @@
 
 	let processTargetNpubError: boolean = false;
 
-	let updatedTargetPubkey: boolean = false;
-
 	function updateTargetPubkey(targetNpub: string | undefined) {
 		function clearPubkey(error: boolean) {
 			processTargetNpubError = error;
 			targetPubkey = undefined;
-			updatedTargetPubkey = true;
 		}
 
 		function setPubkey(newPubkey: string) {
 			targetPubkey = newPubkey;
 			processTargetNpubError = false;
-			updatedTargetPubkey = true;
 		}
 
 		if (!targetNpub) {
@@ -127,9 +127,14 @@
 	interface SubscribeRatingEventsParams {
 		depth: number;
 		originalPubkey: string;
+		fromTarget: boolean;
 	}
 
-	async function subscribeRatingEvents({ depth, originalPubkey }: SubscribeRatingEventsParams) {
+	async function subscribeRatingEvents({
+		depth,
+		originalPubkey,
+		fromTarget
+	}: SubscribeRatingEventsParams) {
 		// Empty older subscriptions in favor of new ones (ideally it will never occurs)
 		for (const pubkey of Object.keys(subscriptions)) {
 			const subscription = subscriptions[pubkey];
@@ -137,11 +142,19 @@
 			delete subscriptions[pubkey];
 		}
 
-		async function startEventHandling(
-			pubkey: string,
-			currentDepth: number,
-			parentRating?: GraphRating
-		): Promise<GraphRating[]> {
+		interface StartEventHandlingParams {
+			pubkey: string;
+			currentDepth: number;
+			relatedRating?: GraphRating;
+			relatedIsParent?: boolean;
+		}
+
+		async function startEventHandling({
+			pubkey,
+			currentDepth,
+			relatedRating,
+			relatedIsParent
+		}: StartEventHandlingParams): Promise<GraphRating[]> {
 			const baseRatings: GraphRating[] = [];
 
 			const subscription =
@@ -150,7 +163,8 @@
 					relayList,
 					[
 						{
-							authors: [pubkey],
+							authors: relatedIsParent ? [pubkey] : undefined,
+							'#d': relatedIsParent ? undefined : ['pls-wot-rating-' + pubkey],
 							kinds: [ReviewEvent],
 							'#l': ['pls-wot-rating']
 						}
@@ -185,34 +199,49 @@
 
 								const ratingIndex = baseRatings.findIndex((r) => r.eventId === newRating.eventId);
 
+								const relatedRatingArr = relatedIsParent ? 'parentRatings' : 'childrenRatings';
+
+								const fallbackRelatedRatingArr = relatedIsParent
+									? 'childrenRatings'
+									: 'parentRatings';
+
 								if (ratingIndex >= 0) {
 									const oldRating = baseRatings[ratingIndex];
 
-									if (parentRating) {
-										const parentRatingIndex = oldRating.parentRatings.findIndex(
-											(p) => p.eventId === parentRating.eventId
+									if (relatedRating) {
+										const relatedRatingIndex = oldRating[relatedRatingArr].findIndex(
+											(p) => p.eventId === relatedRating.eventId
 										);
 
-										if (parentRatingIndex >= 0) {
-											oldRating.parentRatings[parentRatingIndex] = parentRating;
+										if (relatedRatingIndex >= 0) {
+											oldRating.parentRatings[relatedRatingIndex] = relatedRating;
 										} else {
-											oldRating.parentRatings.push(parentRating);
+											oldRating.parentRatings.push(relatedRating);
 										}
 									}
 
 									baseRatings[ratingIndex] = newRating;
 								} else {
-									if (parentRating) newRating.parentRatings.push(parentRating);
+									if (relatedRating) newRating[relatedRatingArr].push(relatedRating);
 
 									baseRatings.push(newRating);
 
-									if (currentDepth < depth) {
-										const childrenRatings = await startEventHandling(
-											to.pubkey,
-											currentDepth + 1,
-											newRating
-										);
-										newRating.childrenRatings = childrenRatings;
+									const currentDepthCheck = relatedIsParent
+										? currentDepth < depth
+										: currentDepth > 0;
+
+									const currentDepthIncrement = currentDepth + (relatedIsParent ? 1 : -1);
+
+									if (currentDepthCheck) {
+										const pubkey = relatedIsParent ? to.pubkey : from.pubkey;
+
+										const fallbackRatings = await startEventHandling({
+											pubkey,
+											currentDepth: currentDepthIncrement,
+											relatedRating: newRating,
+											relatedIsParent
+										});
+										newRating[fallbackRelatedRatingArr] = fallbackRatings;
 									}
 								}
 
@@ -243,14 +272,18 @@
 			return baseRatings;
 		}
 
-		ratings = await startEventHandling(originalPubkey, 0);
+		ratings = await startEventHandling({
+			pubkey: originalPubkey,
+			currentDepth: fromTarget ? depth : 0,
+			relatedIsParent: !fromTarget
+		});
 	}
 
 	interface AddSelfNodeParams {
 		pubkey: string;
 	}
 
-	async function addSelfNode({ pubkey }: AddSelfNodeParams) {
+	async function updateSelfNode({ pubkey }: AddSelfNodeParams) {
 		const profileMetadata = await getProfileMetadata(pubkey);
 		const parsedMetadata = parseProfileFromJsonString(profileMetadata?.content || '{}', {
 			pubkey
@@ -260,24 +293,59 @@
 		const titleText = displayName ? `${displayName} (You)` : '(You)';
 
 		graph.mergeNode(pubkey, {
-			size: 96,
+			size: centralNodesSize,
 			label: titleText,
 			title: titleText,
-			image: parsedMetadata.picture || '/avatar.svg'
+			image: parsedMetadata.picture || '/avatar.svg',
+			color: 'mediumblue',
+			borderWidth: 5,
 		});
 	}
 
-	$: if (pubkey) addSelfNode({ pubkey });
+	$: if (pubkey && !targetPubkey) updateSelfNode({ pubkey });
+
+	interface UpdateTargetNodeParams {
+		pubkey: string;
+	}
+
+	async function updateTargetNode({ pubkey }: UpdateTargetNodeParams) {
+		const profileMetadata = await getProfileMetadata(pubkey);
+		const parsedMetadata = parseProfileFromJsonString(profileMetadata?.content || '{}', {
+			pubkey
+		});
+		const displayName = parsedMetadata.displayName || parsedMetadata.display_name;
+
+		const titleText = displayName ? `${displayName} (Target)` : '(Target)';
+
+		graph.mergeNode(pubkey, {
+			size: centralNodesSize,
+			label: titleText,
+			title: titleText,
+			image: parsedMetadata.picture || '/avatar.svg',
+			color: 'yellow',
+			borderWidth: 5,
+		});
+	}
+
+	$: if (targetPubkey && !pubkey) updateTargetNode({ pubkey: targetPubkey });
 
 	interface PopupateGraphParams {
 		rating: GraphRating;
 	}
 
 	async function populateGraph({ rating }: PopupateGraphParams) {
-		const profile = rating.to;
+		if (pubkey && !graph.hasNode(pubkey)) {
+			await updateSelfNode({ pubkey });
+		}
 
-		(() => {
+		if (targetPubkey && !graph.hasNode(pubkey)) {
+			await updateTargetNode({ pubkey: targetPubkey });
+		}
+
+		async function mergeNode(profile: ProfileType) {
 			if (profile.pubkey === pubkey) return;
+
+			if (profile.pubkey === targetPubkey) return;
 
 			const username = profile.displayName || profile.display_name || profile.name;
 
@@ -285,21 +353,16 @@
 
 			const image = profile.picture || '/avatar.svg';
 
-			if (graph.hasNode(profile.pubkey)) {
-				graph.mergeNode(profile.pubkey, {
-					label: displayName,
-					title: displayName,
-					image
-				});
-			} else {
-				graph.addNode(profile.pubkey, {
-					label: displayName,
-					size: 64,
-					title: displayName,
-					image
-				});
-			}
-		})();
+			graph.mergeNode(profile.pubkey, {
+				label: displayName,
+				size: nodesSize,
+				title: displayName,
+				image,
+				color: undefined,
+			});
+		}
+
+		await Promise.all([mergeNode(rating.from), mergeNode(rating.to)]);
 
 		const ratingComponent = renderVirtualSvelteElement(GraphRatingText, {
 			text: rating.description
@@ -314,7 +377,12 @@
 		});
 	}
 
-	$: if (pubkey) subscribeRatingEvents({ originalPubkey: pubkey, depth });
+	$: if ((pubkey && !targetPubkey) || (targetPubkey && !pubkey))
+		subscribeRatingEvents({
+			originalPubkey: pubkey || (targetPubkey as string),
+			depth,
+			fromTarget: !pubkey
+		});
 
 	let graphContainer: HTMLDivElement;
 
@@ -440,11 +508,14 @@
 			.forEach((edge) => graph.dropEdge(edge));
 	}
 
-	$: if (pubkey && targetPubkey)
+	$: if (pubkey && targetPubkey) {
 		removeIrrelevantEdges({
 			sourcePubkey: pubkey,
 			targetPubkey: targetPubkey
 		});
+		updateSelfNode({ pubkey });
+		updateTargetNode({ pubkey: targetPubkey });
+	}
 
 	interface RepopulateGraph {
 		ratings: GraphRating[];
@@ -460,13 +531,13 @@
 		);
 	}
 
-	$: if (pubkey && !targetPubkey && updatedTargetPubkey) repopulateGraph({ ratings });
+	$: if ((pubkey && !targetPubkey) || (!pubkey && targetPubkey)) repopulateGraph({ ratings });
 </script>
 
 <div class="flex flex-col items-center gap-8 pt-4">
 	<div class="flex w-full flex-wrap justify-center gap-4">
 		<div class="flex flex-col">
-			<Label for="filterFrom" class="font-semibold">Main rater npub</Label>
+			<Label for="filterFrom" class="font-semibold">Main rater npub (You)</Label>
 			<Input
 				id="filterFrom"
 				placeholder="Enter main rater npub"
