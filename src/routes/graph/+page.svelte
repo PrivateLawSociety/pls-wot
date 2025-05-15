@@ -291,11 +291,11 @@
 
 	$: if (!npub && !targetNpub) clearGraph();
 
-	interface AddSelfNodeParams {
+	interface UpdateSelfNodeParams {
 		pubkey: string;
 	}
 
-	async function updateSelfNode({ pubkey }: AddSelfNodeParams) {
+	async function updateSelfNode({ pubkey }: UpdateSelfNodeParams) {
 		const profileMetadata = await getProfileMetadata(pubkey);
 		const parsedMetadata = parseProfileFromJsonString(profileMetadata?.content || '{}', {
 			pubkey
