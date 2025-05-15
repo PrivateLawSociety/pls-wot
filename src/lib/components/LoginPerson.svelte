@@ -19,20 +19,19 @@
 		if (!event) return;
 		if (!pubkey) return;
 
-		profileMetadata = parseProfileFromJsonString(event?.content || '{}', { npub: npubEncode(pubkey), pubkey: pubkey });
+		profileMetadata = parseProfileFromJsonString(event?.content || '{}', {
+			npub: npubEncode(pubkey),
+			pubkey: pubkey
+		});
 		username = profileMetadata.name ?? 'No name';
 	}
 
 	$: loadProfile(pubkey);
 </script>
 
-<div class="flex flex-col justify-center items-center {divClass}">
-	<ProfileAvatar
-		source={profileMetadata?.picture}
-		alt={username}
-		size={20}
-	/>
+<div class="flex flex-col items-center justify-center {divClass}">
+	<ProfileAvatar source={profileMetadata?.picture} alt={username} size={20} />
 	{#if !hideName}
-		<p title={username} class="text-center w-20 line-clamp-2 break-words">{username}</p>
+		<p title={username} class="line-clamp-2 w-20 break-words text-center">{username}</p>
 	{/if}
 </div>
