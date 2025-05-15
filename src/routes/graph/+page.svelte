@@ -279,6 +279,18 @@
 		});
 	}
 
+	function clearGraph() {
+		for (const pubkey of Object.keys(subscriptions)) {
+			const subscription = subscriptions[pubkey];
+			subscription.close();
+			delete subscriptions[pubkey];
+		}
+
+		graph.clear();
+	}
+
+	$: if (!npub && !targetNpub) clearGraph();
+
 	interface AddSelfNodeParams {
 		pubkey: string;
 	}
@@ -461,6 +473,11 @@
 				id: edge.key,
 				...edge.attributes
 			});
+		});
+
+		graph.on('cleared', () => {
+			data.edges.clear();
+			data.nodes.clear();
 		});
 	});
 
