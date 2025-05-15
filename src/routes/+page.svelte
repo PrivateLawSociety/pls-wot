@@ -19,10 +19,10 @@
 		<a href="/login">
 			<Button class="m:w-64 w-48">Login</Button>
 		</a>
-		<a href="/graph">
-			<Button class="m:w-48 w-48">View graph</Button>
-		</a>
 	{/if}
+	<a href="/graph">
+		<Button class="m:w-48 w-48">View graph</Button>
+	</a>
 	<a href="/table">
 		<Button class="m:w-64 w-48">Ratings table</Button>
 	</a>
