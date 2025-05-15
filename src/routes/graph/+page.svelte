@@ -22,12 +22,6 @@
 	import { renderVirtualSvelteElement } from '$lib/rendering';
 	import { Helper, Input, Label } from 'flowbite-svelte';
 
-	interface GraphRating extends Rating {
-		parentRatings: GraphRating[];
-		childrenRatings: GraphRating[];
-		currentDepth: number;
-	}
-
 	const depth = 3;
 
 	const nodesSize = 64;
@@ -38,6 +32,12 @@
 
 	const graph: Graph<Node, Edge> = new Graph();
 
+	interface GraphRating extends Rating {
+		parentRatings: GraphRating[];
+		childrenRatings: GraphRating[];
+		currentDepth: number;
+	}
+
 	let ratings: GraphRating[] = [];
 
 	let pubkey: string | undefined = loadPubkey();
@@ -46,16 +46,16 @@
 
 	let processNpubError: boolean = false;
 
+	function loadPubkey() {
+		return nostrAuth.getPubkey();
+	}
+
 	function loadNpub() {
 		const pubkey = nostrAuth.getPubkey();
 
 		if (!pubkey) return;
 
 		return nip19.npubEncode(pubkey);
-	}
-
-	function loadPubkey() {
-		return nostrAuth.getPubkey();
 	}
 
 	function updatePubkey(npub: string | undefined) {
@@ -298,11 +298,11 @@
 			title: titleText,
 			image: parsedMetadata.picture || '/avatar.svg',
 			color: 'mediumblue',
-			borderWidth: 5,
+			borderWidth: 5
 		});
 	}
 
-	$: if (pubkey && !targetPubkey) updateSelfNode({ pubkey });
+	$: if (pubkey) updateSelfNode({ pubkey });
 
 	interface UpdateTargetNodeParams {
 		pubkey: string;
@@ -323,11 +323,11 @@
 			title: titleText,
 			image: parsedMetadata.picture || '/avatar.svg',
 			color: 'yellow',
-			borderWidth: 5,
+			borderWidth: 5
 		});
 	}
 
-	$: if (targetPubkey && !pubkey) updateTargetNode({ pubkey: targetPubkey });
+	$: if (targetPubkey) updateTargetNode({ pubkey: targetPubkey });
 
 	interface PopupateGraphParams {
 		rating: GraphRating;
@@ -358,7 +358,7 @@
 				size: nodesSize,
 				title: displayName,
 				image,
-				color: undefined,
+				color: undefined
 			});
 		}
 
