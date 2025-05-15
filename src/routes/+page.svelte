@@ -15,10 +15,10 @@
 		<a href="/rate">
 			<Button class="m:w-48 w-48">Give rating</Button>
 		</a>
-		<a href="/graph">
-			<Button class="m:w-48 w-48">View your graph</Button>
-		</a>
 	{:else}
+		<a href="/graph">
+			<Button class="m:w-48 w-48">View graph</Button>
+		</a>
 		<a href="/login">
 			<Button class="m:w-64 w-48">Login</Button>
 		</a>
