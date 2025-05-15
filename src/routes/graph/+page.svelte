@@ -551,40 +551,40 @@
 	$: if ((pubkey && !targetPubkey) || (!pubkey && targetPubkey)) repopulateGraph({ ratings });
 </script>
 
-<div class="flex flex-col items-center gap-8 pt-4">
-	<div class="flex w-full flex-wrap justify-center gap-4">
-		<div class="flex flex-col">
-			<Label for="filterFrom" class="font-semibold">Main rater npub (You)</Label>
-			<Input
-				id="filterFrom"
-				placeholder="Enter main rater npub"
-				bind:value={npub}
-				autocomplete="off"
-			/>
-			{#if processNpubError}
-				<Helper class="mt-2" color="red">
-					<span class="font-bold">Invalid npub</span>
-				</Helper>
-			{/if}
-		</div>
+<div class="flex flex-col h-full overflow-hidden w-full">
+	<div class="flex flex-col items-center gap-8 p-6">
+		<div class="flex w-full flex-wrap justify-center gap-4">
+			<div class="flex flex-col">
+				<Label for="filterFrom" class="font-semibold">Main rater npub (You)</Label>
+				<Input
+					id="filterFrom"
+					placeholder="Enter main rater npub"
+					bind:value={npub}
+					autocomplete="off"
+				/>
+				{#if processNpubError}
+					<Helper class="mt-2" color="red">
+						<span class="font-bold">Invalid npub</span>
+					</Helper>
+				{/if}
+			</div>
 
-		<div>
-			<Label for="filterTo">Target rated npub</Label>
-			<Input
-				id="filterTo"
-				placeholder="Enter target npub"
-				bind:value={targetNpub}
-				autocomplete="off"
-			/>
-			{#if processTargetNpubError}
-				<Helper class="mt-2" color="red">
-					<span>Invalid npub</span>
-				</Helper>
-			{/if}
+			<div>
+				<Label for="filterTo">Target rated npub</Label>
+				<Input
+					id="filterTo"
+					placeholder="Enter target npub"
+					bind:value={targetNpub}
+					autocomplete="off"
+				/>
+				{#if processTargetNpubError}
+					<Helper class="mt-2" color="red">
+						<span>Invalid npub</span>
+					</Helper>
+				{/if}
+			</div>
 		</div>
 	</div>
+
+	<div bind:this={graphContainer} class="flex-1 w-full bg-slate-400" />
 </div>
-
-<div class="flex w-full flex-col flex-wrap items-center justify-center gap-8 p-4"></div>
-
-<div bind:this={graphContainer} class="h-full w-full bg-slate-400" />
