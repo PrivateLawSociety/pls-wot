@@ -20,7 +20,7 @@
 	import { nip19 } from 'nostr-tools';
 	import GraphRatingText from '$lib/components/GraphRatingText.svelte';
 	import { renderVirtualSvelteElement } from '$lib/rendering';
-	import { Helper, Input, Label } from 'flowbite-svelte';
+	import { Checkbox, Helper, Input, Label } from 'flowbite-svelte';
 	import { toasts } from 'svelte-toasts';
 
 	const depth = 3;
@@ -39,6 +39,20 @@
 		hoverWidth: 10
 	};
 
+	const physics = {
+		enabled: true,
+		barnesHut: {
+			theta: 0,
+			gravitationalConstant: -1000,
+			centralGravity: 0.05,
+			springLength: 80,
+			springConstant: 3 * 10 ** -5,
+			damping: 0.1,
+			avoidOverlap: 1
+		},
+		solver: 'barnesHut'
+	};
+
 	const subscriptions: Record<string, SubCloser> = {};
 
 	const graph: Graph<Node, Edge> = new Graph();
@@ -48,6 +62,8 @@
 		childrenRatings: GraphRating[];
 		currentDepth: number;
 	}
+
+	let network: Network | undefined = undefined;
 
 	let ratings: GraphRating[] = [];
 
@@ -407,6 +423,20 @@
 			fromTarget: !pubkey
 		});
 
+	let physicsEnabled = true;
+
+	interface TogglePhysicsParams {
+		physicsEnabled: boolean;
+	}
+
+	function togglePhysics({ physicsEnabled }: TogglePhysicsParams) {
+		network?.setOptions({
+			physics: physicsEnabled ? physics : false
+		});
+	}
+
+	$: togglePhysics({ physicsEnabled });
+
 	let graphContainer: HTMLDivElement;
 
 	onMount(() => {
@@ -415,20 +445,8 @@
 			edges: new DataSet<Edge>()
 		};
 
-		const network = new Network(graphContainer, data, {
-			physics: {
-				enabled: true,
-				barnesHut: {
-					theta: 0,
-					gravitationalConstant: -1000,
-					centralGravity: 0.05,
-					springLength: 80,
-					springConstant: 3 * 10 ** -5,
-					damping: 0.1,
-					avoidOverlap: 1
-				},
-				solver: 'barnesHut'
-			},
+		network = new Network(graphContainer, data, {
+			physics: physicsEnabled ? physics : false,
 			nodes: {
 				shape: 'circularImage',
 				font: {
@@ -639,7 +657,7 @@
 
 <div class="flex h-full w-full flex-col overflow-hidden">
 	<div class="flex flex-col items-center gap-8 p-6">
-		<div class="flex w-full flex-wrap justify-center gap-4">
+		<div class="flex w-full flex-wrap items-center justify-center gap-4">
 			<div class="flex flex-col">
 				<Label for="filterFrom" class="font-semibold">Main rater npub (You)</Label>
 				<Input
@@ -655,7 +673,7 @@
 				{/if}
 			</div>
 
-			<div>
+			<div class="flex flex-col">
 				<Label for="filterTo">Target rated npub</Label>
 				<Input
 					id="filterTo"
@@ -668,6 +686,10 @@
 						<span>Invalid npub</span>
 					</Helper>
 				{/if}
+			</div>
+
+			<div class="flex flex-col">
+				<Checkbox bind:checked={physicsEnabled}>Physics enabled</Checkbox>
 			</div>
 		</div>
 	</div>
