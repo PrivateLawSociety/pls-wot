@@ -437,7 +437,13 @@
 				arrows: {
 					to: true
 				},
-				chosen: false
+				chosen: false,
+				smooth: {
+					type: 'continuous',
+					enabled: true,
+					forceDirection: 'none',
+					roundness: 0
+				}
 			},
 			interaction: { hover: true }
 		});
