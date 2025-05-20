@@ -21,6 +21,7 @@
 	import GraphRatingText from '$lib/components/GraphRatingText.svelte';
 	import { renderVirtualSvelteElement } from '$lib/rendering';
 	import { Helper, Input, Label } from 'flowbite-svelte';
+	import { toasts } from 'svelte-toasts';
 
 	const depth = 3;
 
@@ -30,7 +31,7 @@
 
 	const nodeWidths = {
 		width: 5,
-		hoverWidth: 10,
+		hoverWidth: 10
 	};
 
 	const edgeWidths = {
@@ -307,7 +308,8 @@
 		const parsedMetadata = parseProfileFromJsonString(profileMetadata?.content || '{}', {
 			pubkey
 		});
-		const displayName = parsedMetadata.displayName || parsedMetadata.display_name || parsedMetadata.name;
+		const displayName =
+			parsedMetadata.displayName || parsedMetadata.display_name || parsedMetadata.name;
 
 		const titleText = displayName ? `${displayName} (You)` : '(You)';
 
@@ -332,7 +334,8 @@
 		const parsedMetadata = parseProfileFromJsonString(profileMetadata?.content || '{}', {
 			pubkey
 		});
-		const displayName = parsedMetadata.displayName || parsedMetadata.display_name || parsedMetadata.name;
+		const displayName =
+			parsedMetadata.displayName || parsedMetadata.display_name || parsedMetadata.name;
 
 		const titleText = displayName ? `${displayName} (Target)` : '(Target)';
 
@@ -455,7 +458,7 @@
 				id: nodeId,
 				borderWidth: nodeWidths.hoverWidth
 			});
-		})
+		});
 
 		network.on('blurNode', (event) => {
 			const nodeId = event.node as string;
@@ -464,7 +467,7 @@
 				id: nodeId,
 				borderWidth: nodeWidths.width
 			});
-		})
+		});
 
 		network.on('hoverEdge', (event) => {
 			const edgeId = event.edge as string;
@@ -484,6 +487,38 @@
 			});
 		});
 
+		network.on('click', async (event) => {
+			const nodes = event.nodes as string[];
+
+			const edges = event.edges as string[];
+
+			function getActionType() {
+				if (nodes.length === 1) return 'pubkey';
+
+				if (edges.length === 1) return 'rating';
+			}
+
+			const actionType = getActionType();
+
+			if (!actionType) return;
+
+			const actions = {
+				pubkey: async () => {
+					const [node] = nodes;
+
+					const npub = nip19.npubEncode(node);
+
+					await navigator.clipboard.writeText(npub);
+
+					toasts.success({
+						title: 'Copied!',
+						description: 'NPUB copied to clipboard!'
+					});
+				}
+			} as Record<typeof actionType, () => Promise<void>>;
+
+			await actions[actionType]?.();
+		});
 
 		network.moveTo({ position: { x: 0, y: 0 }, scale: 0.5 });
 
