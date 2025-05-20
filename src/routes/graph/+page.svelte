@@ -420,12 +420,12 @@
 				enabled: true,
 				barnesHut: {
 					theta: 0,
-					gravitationalConstant: -2000,
+					gravitationalConstant: -1000,
 					centralGravity: 0.05,
 					springLength: 80,
 					springConstant: 3 * 10 ** -5,
 					damping: 0.1,
-					avoidOverlap: 0
+					avoidOverlap: 1
 				},
 				solver: 'barnesHut'
 			},
