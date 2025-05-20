@@ -145,12 +145,7 @@
 		originalPubkey,
 		fromTarget
 	}: SubscribeRatingEventsParams) {
-		// Empty older subscriptions in favor of new ones (ideally it will never occurs)
-		for (const pubkey of Object.keys(subscriptions)) {
-			const subscription = subscriptions[pubkey];
-			subscription.close();
-			delete subscriptions[pubkey];
-		}
+		clearGraph();
 
 		interface StartEventHandlingParams {
 			pubkey: string;
@@ -297,6 +292,8 @@
 		}
 
 		graph.clear();
+
+		ratings = [];
 	}
 
 	$: if (!npub && !targetNpub) clearGraph();
@@ -310,7 +307,7 @@
 		const parsedMetadata = parseProfileFromJsonString(profileMetadata?.content || '{}', {
 			pubkey
 		});
-		const displayName = parsedMetadata.displayName || parsedMetadata.display_name;
+		const displayName = parsedMetadata.displayName || parsedMetadata.display_name || parsedMetadata.name;
 
 		const titleText = displayName ? `${displayName} (You)` : '(You)';
 
@@ -335,7 +332,7 @@
 		const parsedMetadata = parseProfileFromJsonString(profileMetadata?.content || '{}', {
 			pubkey
 		});
-		const displayName = parsedMetadata.displayName || parsedMetadata.display_name;
+		const displayName = parsedMetadata.displayName || parsedMetadata.display_name || parsedMetadata.name;
 
 		const titleText = displayName ? `${displayName} (Target)` : '(Target)';
 
