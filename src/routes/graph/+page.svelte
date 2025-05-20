@@ -28,6 +28,16 @@
 
 	const centralNodesSize = 128;
 
+	const nodeWidths = {
+		width: 5,
+		hoverWidth: 10,
+	};
+
+	const edgeWidths = {
+		width: 5,
+		hoverWidth: 10
+	};
+
 	const subscriptions: Record<string, SubCloser> = {};
 
 	const graph: Graph<Node, Edge> = new Graph();
@@ -310,7 +320,7 @@
 			title: titleText,
 			image: parsedMetadata.picture || '/avatar.svg',
 			color: 'mediumblue',
-			borderWidth: 5
+			borderWidth: nodeWidths.width
 		});
 	}
 
@@ -335,7 +345,7 @@
 			title: titleText,
 			image: parsedMetadata.picture || '/avatar.svg',
 			color: 'yellow',
-			borderWidth: 5
+			borderWidth: nodeWidths.width
 		});
 	}
 
@@ -370,6 +380,7 @@
 				size: nodesSize,
 				title: displayName,
 				image,
+				borderWidth: nodeWidths.width,
 				color: undefined
 			});
 		}
@@ -421,21 +432,55 @@
 					size: 40
 				},
 				brokenImage: '/avatar.svg',
+				chosen: false,
 				color: '#6b7891'
 			},
 			edges: {
-				width: 5,
+				width: edgeWidths.width,
 				arrows: {
 					to: true
-				}
+				},
+				chosen: false
 			},
-			autoResize: true,
 			interaction: { hover: true }
 		});
 
-		// Necessary to handle popups
-		network.on('hoverEdge', () => {});
-		network.on('blurEdge', () => {});
+		network.on('hoverNode', (event) => {
+			const nodeId = event.node as string;
+
+			data.nodes.update({
+				id: nodeId,
+				borderWidth: nodeWidths.hoverWidth
+			});
+		})
+
+		network.on('blurNode', (event) => {
+			const nodeId = event.node as string;
+
+			data.nodes.update({
+				id: nodeId,
+				borderWidth: nodeWidths.width
+			});
+		})
+
+		network.on('hoverEdge', (event) => {
+			const edgeId = event.edge as string;
+
+			data.edges.update({
+				id: edgeId,
+				width: edgeWidths.hoverWidth
+			});
+		});
+
+		network.on('blurEdge', (event) => {
+			const edgeId = event.edge as string;
+
+			data.edges.update({
+				id: edgeId,
+				width: edgeWidths.width
+			});
+		});
+
 
 		network.moveTo({ position: { x: 0, y: 0 }, scale: 0.5 });
 
@@ -551,7 +596,7 @@
 	$: if ((pubkey && !targetPubkey) || (!pubkey && targetPubkey)) repopulateGraph({ ratings });
 </script>
 
-<div class="flex flex-col h-full overflow-hidden w-full">
+<div class="flex h-full w-full flex-col overflow-hidden">
 	<div class="flex flex-col items-center gap-8 p-6">
 		<div class="flex w-full flex-wrap justify-center gap-4">
 			<div class="flex flex-col">
@@ -586,5 +631,5 @@
 		</div>
 	</div>
 
-	<div bind:this={graphContainer} class="flex-1 w-full bg-slate-400" />
+	<div bind:this={graphContainer} class="w-full flex-1 bg-slate-400" />
 </div>
