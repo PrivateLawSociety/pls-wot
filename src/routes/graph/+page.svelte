@@ -418,13 +418,16 @@
 		const network = new Network(graphContainer, data, {
 			physics: {
 				enabled: true,
-				repulsion: {
-					centralGravity: 0.1,
-					springLength: 100,
-					springConstant: 10 ** -5,
-					nodeDistance: 150
+				barnesHut: {
+					theta: 0,
+					gravitationalConstant: -2000,
+					centralGravity: 0.05,
+					springLength: 80,
+					springConstant: 3 * 10 ** -5,
+					damping: 0.1,
+					avoidOverlap: 0
 				},
-				solver: 'repulsion'
+				solver: 'barnesHut'
 			},
 			nodes: {
 				shape: 'circularImage',
