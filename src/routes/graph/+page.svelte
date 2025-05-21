@@ -236,9 +236,9 @@
 										);
 
 										if (relatedRatingIndex >= 0) {
-											oldRating.parentRatings[relatedRatingIndex] = relatedRating;
+											oldRating[relatedRatingArr][relatedRatingIndex] = relatedRating;
 										} else {
-											oldRating.parentRatings.push(relatedRating);
+											oldRating[relatedRatingArr].push(relatedRating);
 										}
 									}
 
