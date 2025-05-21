@@ -1,8 +1,7 @@
 <script lang="ts">
 	import Graph from 'graphology';
-	import { Network, type Node, type Edge } from 'vis-network';
+	import type { Node, Edge } from 'vis-network';
 	import 'vis-network/styles/vis-network.css';
-	import { DataSet } from 'vis-data';
 	import { onMount } from 'svelte';
 
 	import { allSimplePaths } from 'graphology-simple-path';
@@ -21,13 +20,9 @@
 	import GraphRatingText from '$lib/components/GraphRatingText.svelte';
 	import { renderVirtualSvelteElement } from '$lib/rendering';
 	import { Checkbox, Helper, Input, Label } from 'flowbite-svelte';
-	import { toasts } from 'svelte-toasts';
+	import RenderGraph from './RenderGraph.svelte';
 
 	const depth = 3;
-
-	const nodesSize = 64;
-
-	const centralNodesSize = 128;
 
 	const nodeWidths = {
 		width: 5,
@@ -39,20 +34,6 @@
 		hoverWidth: 10
 	};
 
-	const physics = {
-		enabled: true,
-		barnesHut: {
-			theta: 0,
-			gravitationalConstant: -1000,
-			centralGravity: 0.05,
-			springLength: 80,
-			springConstant: 3 * 10 ** -5,
-			damping: 0.1,
-			avoidOverlap: 1
-		},
-		solver: 'barnesHut'
-	};
-
 	const subscriptions: Record<string, SubCloser> = {};
 
 	const graph: Graph<Node, Edge> = new Graph();
@@ -62,8 +43,6 @@
 		childrenRatings: GraphRating[];
 		currentDepth: number;
 	}
-
-	let network: Network | undefined = undefined;
 
 	let ratings: GraphRating[] = [];
 
@@ -330,12 +309,11 @@
 		const titleText = displayName ? `${displayName} (You)` : '(You)';
 
 		graph.mergeNode(pubkey, {
-			size: centralNodesSize,
 			label: titleText,
 			title: titleText,
 			image: parsedMetadata.picture || '/avatar.svg',
 			color: 'mediumblue',
-			borderWidth: nodeWidths.width
+			group: 'principal'
 		});
 	}
 
@@ -356,12 +334,11 @@
 		const titleText = displayName ? `${displayName} (Target)` : '(Target)';
 
 		graph.mergeNode(pubkey, {
-			size: centralNodesSize,
 			label: titleText,
 			title: titleText,
 			image: parsedMetadata.picture || '/avatar.svg',
 			color: 'yellow',
-			borderWidth: nodeWidths.width
+			group: 'principal'
 		});
 	}
 
@@ -393,11 +370,10 @@
 
 			graph.mergeNode(profile.pubkey, {
 				label: displayName,
-				size: nodesSize,
 				title: displayName,
 				image,
-				borderWidth: nodeWidths.width,
-				color: undefined
+				color: undefined,
+				group: 'common'
 			});
 		}
 
@@ -425,180 +401,35 @@
 
 	let physicsEnabled = true;
 
-	interface TogglePhysicsParams {
-		physicsEnabled: boolean;
-	}
-
-	function togglePhysics({ physicsEnabled }: TogglePhysicsParams) {
-		network?.setOptions({
-			physics: physicsEnabled ? physics : false
-		});
-	}
-
-	$: togglePhysics({ physicsEnabled });
-
-	let graphContainer: HTMLDivElement;
+	let renderGraph: RenderGraph;
 
 	onMount(() => {
-		const data = {
-			nodes: new DataSet<Node>(),
-			edges: new DataSet<Edge>()
-		};
-
-		network = new Network(graphContainer, data, {
-			physics: physicsEnabled ? physics : false,
-			nodes: {
-				shape: 'circularImage',
-				font: {
-					size: 40
-				},
-				brokenImage: '/avatar.svg',
-				chosen: false,
-				color: '#6b7891'
-			},
-			edges: {
-				width: edgeWidths.width,
-				arrows: {
-					to: true
-				},
-				chosen: false,
-				smooth: {
-					type: 'continuous',
-					enabled: true,
-					forceDirection: 'none',
-					roundness: 0.1
-				}
-			},
-			interaction: { hover: true }
-		});
-
-		network.on('hoverNode', (event) => {
-			const nodeId = event.node as string;
-
-			data.nodes.update({
-				id: nodeId,
-				borderWidth: nodeWidths.hoverWidth
-			});
-		});
-
-		network.on('blurNode', (event) => {
-			const nodeId = event.node as string;
-
-			data.nodes.update({
-				id: nodeId,
-				borderWidth: nodeWidths.width
-			});
-		});
-
-		network.on('hoverEdge', (event) => {
-			const edgeId = event.edge as string;
-
-			data.edges.update({
-				id: edgeId,
-				width: edgeWidths.hoverWidth
-			});
-		});
-
-		network.on('blurEdge', (event) => {
-			const edgeId = event.edge as string;
-
-			data.edges.update({
-				id: edgeId,
-				width: edgeWidths.width
-			});
-		});
-
-		network.on('click', async (event) => {
-			const nodes = event.nodes as string[];
-
-			const edges = event.edges as string[];
-
-			function getActionType() {
-				if (nodes.length === 1) return 'pubkey';
-
-				if (edges.length === 1) return 'rating';
-			}
-
-			const actionType = getActionType();
-
-			if (!actionType) return;
-
-			const actions = {
-				pubkey: async () => {
-					const [node] = nodes;
-
-					const npub = nip19.npubEncode(node);
-
-					await navigator.clipboard.writeText(npub);
-
-					toasts.success({
-						title: 'Copied!',
-						description: 'NPUB copied to clipboard!'
-					});
-				},
-				rating: async () => {
-					const [edge] = edges;
-
-					const edgeData = graph.getEdgeAttributes(edge);
-
-					const fromNpub = nip19.npubEncode(edgeData.from as string);
-
-					const toNpub = nip19.npubEncode(edgeData.to as string);
-
-					const url = new URL('/table', window.location.origin);
-
-					url.searchParams.set('rater', fromNpub);
-
-					url.searchParams.set('rated', toNpub);
-
-					window.open(url.toString(), '_blank');
-				}
-			} as Record<typeof actionType, () => Promise<void>>;
-
-			await actions[actionType]?.();
-		});
-
-		network.moveTo({ position: { x: 0, y: 0 }, scale: 0.5 });
-
 		graph.on('nodeAdded', (node) => {
-			data.nodes.add({
-				id: node.key,
-				...node.attributes
-			});
+			renderGraph.render({ nodes: [node.key] });
 		});
 
 		graph.on('nodeDropped', (node) => {
-			data.nodes.remove(node.key);
+			renderGraph.render({ nodes: [node.key] });
 		});
 
 		graph.on('nodeAttributesUpdated', (node) => {
-			data.nodes.update({
-				id: node.key,
-				...node.attributes
-			});
+			renderGraph.render({ nodes: [node.key] });
 		});
 
 		graph.on('edgeAdded', (edge) => {
-			data.edges.add({
-				id: edge.key,
-				...edge.attributes
-			});
+			renderGraph.render({ edges: [edge.key] });
 		});
 
 		graph.on('edgeDropped', (edge) => {
-			data.edges.remove(edge.key);
+			renderGraph.render({ edges: [edge.key] });
 		});
 
 		graph.on('edgeAttributesUpdated', (edge) => {
-			data.edges.update({
-				id: edge.key,
-				...edge.attributes
-			});
+			renderGraph.render({ edges: [edge.key] });
 		});
 
 		graph.on('cleared', () => {
-			data.edges.clear();
-			data.nodes.clear();
+			renderGraph.render();
 		});
 	});
 
@@ -711,5 +542,5 @@
 		</div>
 	</div>
 
-	<div bind:this={graphContainer} class="w-full flex-1 bg-slate-400" />
+	<RenderGraph bind:this={renderGraph} nodeWidths={nodeWidths} edgeWidths={edgeWidths} bind:physicsEnabled={physicsEnabled} graph={graph} />
 </div>
