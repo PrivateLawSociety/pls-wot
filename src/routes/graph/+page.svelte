@@ -466,7 +466,7 @@
 					type: 'continuous',
 					enabled: true,
 					forceDirection: 'none',
-					roundness: 0
+					roundness: 0.1
 				}
 			},
 			interaction: { hover: true }
