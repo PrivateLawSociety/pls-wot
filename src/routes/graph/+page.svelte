@@ -535,6 +535,23 @@
 						title: 'Copied!',
 						description: 'NPUB copied to clipboard!'
 					});
+				},
+				rating: async () => {
+					const [edge] = edges;
+
+					const edgeData = graph.getEdgeAttributes(edge);
+
+					const fromNpub = nip19.npubEncode(edgeData.from as string);
+
+					const toNpub = nip19.npubEncode(edgeData.to as string);
+
+					const url = new URL('/table', window.location.origin);
+
+					url.searchParams.set('rater', fromNpub);
+
+					url.searchParams.set('rated', toNpub);
+
+					window.open(url.toString(), '_blank');
 				}
 			} as Record<typeof actionType, () => Promise<void>>;
 
