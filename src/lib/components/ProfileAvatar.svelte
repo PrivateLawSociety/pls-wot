@@ -1,6 +1,6 @@
 <script lang="ts">
 	export let source;
-	export let alt = "";
+	export let alt = '';
 	export let size = 10;
 
 	let imageError = false;
@@ -22,5 +22,10 @@
 		</svg>
 	</div>
 {:else}
-	<img class={`h-${size} w-${size} rounded-full object-contain`} src={source} alt={alt} on:error={() => (imageError = true)} />
+	<img
+		class={`h-${size} w-${size} rounded-full object-contain`}
+		src={source}
+		{alt}
+		on:error={() => (imageError = true)}
+	/>
 {/if}
