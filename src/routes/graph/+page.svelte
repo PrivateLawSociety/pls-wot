@@ -44,6 +44,8 @@
 
 	let ratings: GraphRating[] = [];
 
+	const userPubkey = nostrAuth.getPubkey();
+
 	let pubkey: string | undefined = loadPubkey();
 
 	let npub: string | undefined = loadNpub();
@@ -311,7 +313,11 @@
 		const displayName =
 			parsedMetadata.displayName || parsedMetadata.display_name || parsedMetadata.name;
 
-		const titleText = displayName ? `${displayName} (You)` : '(You)';
+		const isUserPubkey = pubkey === userPubkey;
+
+		const helperText = isUserPubkey ? "(You)" : "(Main rater)";
+
+		const titleText = displayName ? `${displayName} ${helperText}` : helperText;
 
 		graph.mergeNode(pubkey, {
 			label: titleText,
@@ -448,7 +454,7 @@
 	<div class="flex flex-col items-center gap-8 p-6">
 		<div class="flex w-full flex-wrap items-center justify-center gap-4">
 			<div class="flex flex-col">
-				<Label for="filterFrom" class="font-semibold">Main rater npub (You)</Label>
+				<Label for="filterFrom" class="font-semibold">Main rater npub {pubkey === userPubkey ? "(You)" : ""}</Label>
 				<Input
 					id="filterFrom"
 					placeholder="Enter main rater npub"
