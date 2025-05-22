@@ -409,7 +409,11 @@
 		firstSubscriptionEvent: boolean;
 	}
 
-	async function renewSubscriptions({ pubkey, targetPubkey, firstSubscriptionEvent }: RenewSubscriptionsParams) {
+	async function renewSubscriptions({
+		pubkey,
+		targetPubkey,
+		firstSubscriptionEvent
+	}: RenewSubscriptionsParams) {
 		const ratingEventsProps: SubscribeRatingEventsParams = {
 			originalPubkey: pubkey || (targetPubkey as string),
 			depth,
@@ -432,6 +436,10 @@
 	$: renewSubscriptions({ pubkey, targetPubkey, firstSubscriptionEvent });
 
 	let physicsEnabled = true;
+
+	let positiveReviewsEnabled: boolean = true;
+
+	let negativeReviewsEnabled: boolean = true;
 
 	let renderGraph: RenderGraph | undefined;
 </script>
@@ -469,8 +477,17 @@
 				{/if}
 			</div>
 
-			<div class="flex flex-col">
-				<Checkbox bind:checked={physicsEnabled}>Physics enabled</Checkbox>
+			<div class="flex flex-col items-center">
+				<Label>Filters</Label>
+				<div class="flex flex-row items-center gap-x-3">
+					<div class="flex flex-col items-start">
+						<Checkbox bind:checked={positiveReviewsEnabled}>Positive reviews enabled</Checkbox>
+						<Checkbox bind:checked={negativeReviewsEnabled}>Negative reviews enabled</Checkbox>
+					</div>
+					<div class="flex flex-col items-start">
+						<Checkbox bind:checked={physicsEnabled}>Physics enabled</Checkbox>
+					</div>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -482,6 +499,8 @@
 		{nodeWidths}
 		{edgeWidths}
 		bind:physicsEnabled
+		bind:positiveReviewsEnabled
+		bind:negativeReviewsEnabled
 		{graph}
 	/>
 </div>

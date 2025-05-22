@@ -32,6 +32,10 @@
 
 	export let target: string | undefined;
 
+	export let positiveReviewsEnabled: boolean;
+
+	export let negativeReviewsEnabled: boolean;
+
 	export function render() {
 		function clearData() {
 			renderData.nodes.clear();
@@ -45,8 +49,38 @@
 
 		function getData() {
 			function defaultData() {
+				const filteredGraph = graph.copy();
+
+				const edgesToRemove = new Set<string>();
+
+				filteredGraph.forEachEdge((edge) => {
+					const edgeColor = graph.getEdgeAttribute(edge, 'color');
+
+					if (!positiveReviewsEnabled) {
+						if (edgeColor === 'green') edgesToRemove.add(edge);
+					}
+
+					if (!negativeReviewsEnabled) {
+						if (edgeColor === 'red') edgesToRemove.add(edge);
+					}
+				});
+
+				edgesToRemove.forEach((edge) => filteredGraph.dropEdge(edge));
+
+				const nodesToRemove = new Set<string>();
+
+				filteredGraph.forEachNode((node) => {
+					if (node === source || node === target) return;
+
+					const degree = filteredGraph.degree(node);
+
+					if (degree <= 0) nodesToRemove.add(node);
+				});
+
+				nodesToRemove.forEach((node) => filteredGraph.dropNode(node));
+
 				return {
-					nodes: graph.nodes().map((node) => {
+					nodes: filteredGraph.nodes().map((node) => {
 						const data = graph.getNodeAttributes(node);
 
 						return {
@@ -54,7 +88,7 @@
 							...data
 						};
 					}),
-					edges: graph.edges().map((edge) => {
+					edges: filteredGraph.edges().map((edge) => {
 						const data = graph.getEdgeAttributes(edge);
 
 						return {
@@ -67,9 +101,42 @@
 
 			if (!source || !target) return defaultData();
 
-			const relevantPaths = allSimplePaths(graph, source, target);
+			const simplePaths = allSimplePaths(graph, source, target);
 
-			const relevantNodes = new Set<string>();
+			const relevantPaths = simplePaths.filter((pathGroup) => {
+				function pathHasProhibitedEdge(prohibitedColor: 'green' | 'red') {
+					for (const i in pathGroup.slice(1)) {
+						const previousNodeIndex = Number(i);
+
+						const nodeIndex = Number(i) + 1;
+
+						const node = pathGroup[nodeIndex];
+
+						const previousNode = pathGroup[previousNodeIndex];
+
+						const edgeId = graph.edge(previousNode, node)!;
+
+						const edgeData = graph.getEdgeAttributes(edgeId);
+
+						if (edgeData.color === prohibitedColor) return true;
+					}
+
+					return false;
+				}
+
+				if (!positiveReviewsEnabled) {
+					if (pathHasProhibitedEdge('green')) return false;
+				}
+
+				if (!negativeReviewsEnabled) {
+					if (pathHasProhibitedEdge('red')) return false;
+				}
+
+				return true;
+			});
+
+			const relevantNodes = new Set<string>([source, target]);
+
 			const relevantEdgeCombinations = new Set<string>();
 
 			relevantPaths.forEach((nodeGroup) => nodeGroup.forEach((node) => relevantNodes.add(node)));
@@ -157,6 +224,8 @@
 		clearOldNodes();
 		clearOldEdges();
 	}
+
+	$: positiveReviewsEnabled, negativeReviewsEnabled, render();
 
 	interface HoverWidths {
 		width: number;
