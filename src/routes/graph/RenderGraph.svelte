@@ -5,6 +5,7 @@
 	import type Graph from 'graphology';
 	import { nip19 } from 'nostr-tools';
 	import { toasts } from 'svelte-toasts';
+	import { allSimplePaths } from 'graphology-simple-path';
 
 	const renderData = {
 		nodes: new DataSet<Node>(),
@@ -27,52 +28,134 @@
 
 	export let graph: Graph<Node, Edge>;
 
-	interface RenderChangedData {
-		nodes?: string[];
-		edges?: string[];
-	}
+	export let source: string | undefined;
 
-	interface RenderOptions {}
+	export let target: string | undefined;
 
-	const defaultRenderOptions = {};
-
-	export function render(data?: RenderChangedData, options: RenderOptions = defaultRenderOptions) {
-		const nodes = data?.nodes || graph.nodes();
-		const edges = data?.edges || graph.edges();
-
-		if (nodes.length === 0 && edges.length === 0) {
+	export function render() {
+		function clearData() {
 			renderData.nodes.clear();
 			renderData.edges.clear();
+		}
+
+		if (!source && !target) {
+			clearData();
 			return;
 		}
 
-		nodes.forEach((node) => {
-			if (!graph.hasNode(node)) {
-				renderData.nodes.remove(node);
-				return;
+		function getData() {
+			function defaultData() {
+				return {
+					nodes: graph.nodes().map((node) => {
+						const data = graph.getNodeAttributes(node);
+
+						return {
+							id: node,
+							...data
+						};
+					}),
+					edges: graph.edges().map((edge) => {
+						const data = graph.getEdgeAttributes(edge);
+
+						return {
+							id: edge,
+							...data
+						};
+					})
+				};
 			}
 
-			const data = graph.getNodeAttributes(node);
+			if (!source || !target) return defaultData();
 
-			renderData.nodes.update({
-				id: node,
-				...data
-			});
-		});
+			const relevantPaths = allSimplePaths(graph, source, target);
 
-		edges.forEach((edge) => {
-			if (!graph.hasEdge(edge)) {
-				renderData.edges.remove(edge);
-				return;
-			}
+			const relevantNodes = new Set<string>();
+			const relevantEdgeCombinations = new Set<string>();
 
-			const data = graph.getEdgeAttributes(edge);
+			relevantPaths.forEach((nodeGroup) => nodeGroup.forEach((node) => relevantNodes.add(node)));
 
-			renderData.edges.update({
-				id: edge,
-				...data
-			});
-		});
+			relevantPaths.forEach((path) =>
+				path.slice(1).forEach((node, i) => {
+					const previousNodeIndex = i;
+
+					const previousNode = path[previousNodeIndex];
+
+					const edgeCombination = `${previousNode}:${node}`;
+
+					relevantEdgeCombinations.add(edgeCombination);
+				})
+			);
+
+			const nodes = graph
+				.filterNodes((node) => relevantNodes.has(node))
+				.map((node) => {
+					const data = graph.getNodeAttributes(node);
+
+					return {
+						id: node,
+						...data
+					};
+				});
+
+			const edges = graph
+				.filterEdges((edge) => {
+					const data = graph.getEdgeAttributes(edge);
+
+					const edgeIndex = `${data.from}:${data.to}`;
+
+					return relevantEdgeCombinations.has(edgeIndex);
+				})
+				.map((edge) => {
+					const data = graph.getEdgeAttributes(edge);
+
+					return {
+						id: edge,
+						...data
+					};
+				});
+
+			return {
+				nodes,
+				edges
+			};
+		}
+
+		const { nodes, edges } = getData();
+
+		if (nodes.length === 0 && edges.length === 0) {
+			clearData();
+			return;
+		}
+
+		nodes.forEach((node) => renderData.nodes.update(node));
+		edges.forEach((edge) => renderData.edges.update(edge));
+
+		function clearOldNodes() {
+			if (nodes.length === renderData.nodes.length) return;
+
+			const nodeIds = nodes.map((node) => node.id!);
+
+			const excludedNodeIds = renderData.nodes
+				.map((node) => node.id!)
+				.filter((node) => !nodeIds.includes(node));
+
+			renderData.nodes.remove(excludedNodeIds);
+		}
+
+		function clearOldEdges() {
+			if (edges.length === renderData.edges.length) return;
+
+			const edgeIds = edges.map((edge) => edge.id!);
+
+			const excludedEdgeIds = renderData.edges
+				.map((edge) => edge.id!)
+				.filter((edge) => !edgeIds.includes(edge));
+
+			renderData.edges.remove(excludedEdgeIds);
+		}
+
+		clearOldNodes();
+		clearOldEdges();
 	}
 
 	interface HoverWidths {
