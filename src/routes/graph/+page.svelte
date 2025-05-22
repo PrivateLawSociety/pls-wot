@@ -313,11 +313,36 @@
 		const displayName =
 			parsedMetadata.displayName || parsedMetadata.display_name || parsedMetadata.name;
 
-		const isUserPubkey = pubkey === userPubkey;
+		const isUserPubkey = userPubkey && (pubkey === userPubkey);
 
-		const helperText = isUserPubkey ? "(You)" : "(Main rater)";
+		const helperText = isUserPubkey ? '(You)' : '(Main rater)';
 
 		const titleText = displayName ? `${displayName} ${helperText}` : helperText;
+
+		const olderNodeId = graph.findNode((node) => {
+			const nodeColor = graph.getNodeAttribute(node, 'color');
+
+			if (nodeColor === 'mediumblue') return true;
+
+			return false;
+		});
+
+		if (olderNodeId) {
+			const profileMetadata = await getProfileMetadata(olderNodeId);
+			const parsedMetadata = parseProfileFromJsonString(profileMetadata?.content || '{}', {
+				pubkey
+			});
+			const displayName =
+				parsedMetadata.displayName || parsedMetadata.display_name || parsedMetadata.name;
+
+			graph.mergeNode(olderNodeId, {
+				label: displayName,
+				title: displayName,
+				image: parsedMetadata.picture || '/avatar.svg',
+				color: '#6b7492',
+				group: 'common'
+			});
+		}
 
 		graph.mergeNode(pubkey, {
 			label: titleText,
@@ -345,6 +370,31 @@
 			parsedMetadata.displayName || parsedMetadata.display_name || parsedMetadata.name;
 
 		const titleText = displayName ? `${displayName} (Target)` : '(Target)';
+
+		const olderNodeId = graph.findNode((node) => {
+			const nodeColor = graph.getNodeAttribute(node, 'color');
+
+			if (nodeColor === 'yellow') return true;
+
+			return false;
+		});
+
+		if (olderNodeId) {
+			const profileMetadata = await getProfileMetadata(olderNodeId);
+			const parsedMetadata = parseProfileFromJsonString(profileMetadata?.content || '{}', {
+				pubkey
+			});
+			const displayName =
+				parsedMetadata.displayName || parsedMetadata.display_name || parsedMetadata.name;
+
+			graph.mergeNode(olderNodeId, {
+				label: displayName,
+				title: displayName,
+				image: parsedMetadata.picture || '/avatar.svg',
+				color: '#6b7492',
+				group: 'common'
+			});
+		}
 
 		graph.mergeNode(pubkey, {
 			label: titleText,
@@ -387,7 +437,7 @@
 				label: displayName,
 				title: displayName,
 				image,
-				color: undefined,
+				color: '#6b7492',
 				group: 'common'
 			});
 		}
@@ -454,7 +504,9 @@
 	<div class="flex flex-col items-center gap-8 p-6">
 		<div class="flex w-full flex-wrap items-center justify-center gap-4">
 			<div class="flex flex-col">
-				<Label for="filterFrom" class="font-semibold">Main rater npub {pubkey === userPubkey ? "(You)" : ""}</Label>
+				<Label for="filterFrom" class="font-semibold"
+					>Main rater npub {(userPubkey && (pubkey === userPubkey)) ? '(You)' : ''}</Label
+				>
 				<Input
 					id="filterFrom"
 					placeholder="Enter main rater npub"
