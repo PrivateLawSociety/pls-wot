@@ -2,9 +2,7 @@
 	import Graph from 'graphology';
 	import type { Node, Edge } from 'vis-network';
 	import 'vis-network/styles/vis-network.css';
-	import { onMount } from 'svelte';
 
-	import { allSimplePaths } from 'graphology-simple-path';
 	import {
 		getProfileMetadata,
 		nostrAuth,
@@ -130,6 +128,8 @@
 
 	$: updateTargetPubkey(targetNpub);
 
+	let firstSubscriptionEvent = true;
+
 	interface SubscribeRatingEventsParams {
 		depth: number;
 		originalPubkey: string;
@@ -141,6 +141,7 @@
 		originalPubkey,
 		fromTarget
 	}: SubscribeRatingEventsParams) {
+		firstSubscriptionEvent = false;
 		clearGraph();
 
 		interface StartEventHandlingParams {
@@ -292,7 +293,11 @@
 		ratings = [];
 	}
 
-	$: if (!npub && !targetNpub) clearGraph();
+	$: if (!npub && !targetNpub) {
+		clearGraph();
+
+		renderGraph?.render();
+	}
 
 	interface UpdateSelfNodeParams {
 		pubkey: string;
@@ -315,6 +320,8 @@
 			color: 'mediumblue',
 			group: 'principal'
 		});
+
+		renderGraph?.render();
 	}
 
 	$: if (pubkey) updateSelfNode({ pubkey });
@@ -340,6 +347,8 @@
 			color: 'yellow',
 			group: 'principal'
 		});
+
+		renderGraph?.render();
 	}
 
 	$: if (targetPubkey) updateTargetNode({ pubkey: targetPubkey });
@@ -390,117 +399,41 @@
 			dashes: rating.businessAlreadyDone ? undefined : [2, 2, 10, 10],
 			title: ratingComponent
 		});
+
+		renderGraph?.render();
 	}
 
-	$: if ((pubkey && !targetPubkey) || (targetPubkey && !pubkey))
-		subscribeRatingEvents({
+	interface RenewSubscriptionsParams {
+		pubkey?: string;
+		targetPubkey?: string;
+		firstSubscriptionEvent: boolean;
+	}
+
+	async function renewSubscriptions({ pubkey, targetPubkey, firstSubscriptionEvent }: RenewSubscriptionsParams) {
+		const ratingEventsProps: SubscribeRatingEventsParams = {
 			originalPubkey: pubkey || (targetPubkey as string),
 			depth,
 			fromTarget: !pubkey
-		});
+		};
+
+		if (firstSubscriptionEvent) {
+			if (pubkey || targetPubkey) {
+				await subscribeRatingEvents(ratingEventsProps);
+			}
+
+			return;
+		}
+
+		if ((pubkey && !targetPubkey) || (targetPubkey && !pubkey)) {
+			await subscribeRatingEvents(ratingEventsProps);
+		}
+	}
+
+	$: renewSubscriptions({ pubkey, targetPubkey, firstSubscriptionEvent });
 
 	let physicsEnabled = true;
 
-	let renderGraph: RenderGraph;
-
-	onMount(() => {
-		graph.on('nodeAdded', (node) => {
-			renderGraph.render({ nodes: [node.key] });
-		});
-
-		graph.on('nodeDropped', (node) => {
-			renderGraph.render({ nodes: [node.key] });
-		});
-
-		graph.on('nodeAttributesUpdated', (node) => {
-			renderGraph.render({ nodes: [node.key] });
-		});
-
-		graph.on('edgeAdded', (edge) => {
-			renderGraph.render({ edges: [edge.key] });
-		});
-
-		graph.on('edgeDropped', (edge) => {
-			renderGraph.render({ edges: [edge.key] });
-		});
-
-		graph.on('edgeAttributesUpdated', (edge) => {
-			renderGraph.render({ edges: [edge.key] });
-		});
-
-		graph.on('cleared', () => {
-			renderGraph.render();
-		});
-	});
-
-	interface RemoveIrrelevantEdgesParams {
-		sourcePubkey: string;
-		targetPubkey: string;
-	}
-
-	function removeIrrelevantEdges({ sourcePubkey, targetPubkey }: RemoveIrrelevantEdgesParams) {
-		const relevantPaths = allSimplePaths(graph, sourcePubkey, targetPubkey);
-
-		const relevantNodes = new Set<string>();
-		const relevantEdgeCombinations = new Set<string>();
-
-		relevantPaths.forEach((nodeGroup) => nodeGroup.forEach((node) => relevantNodes.add(node)));
-
-		relevantPaths.forEach((path) =>
-			path.slice(1).forEach((node, i) => {
-				const previousNodeIndex = i;
-
-				const previousNode = path[previousNodeIndex];
-
-				const edgeCombination = `${previousNode}:${node}`;
-
-				relevantEdgeCombinations.add(edgeCombination);
-			})
-		);
-
-		graph
-			.filterNodes((node) => !relevantNodes.has(node))
-			.forEach((node) => {
-				graph.dropNode(node);
-			});
-
-		const edgesToMaintain = graph.filterEdges((edge) => {
-			const edgeData = graph.getEdgeAttributes(edge);
-
-			const edgeIndex = `${edgeData.from}:${edgeData.to}`;
-
-			return relevantEdgeCombinations.has(edgeIndex);
-		});
-
-		graph
-			.filterEdges((edge) => !edgesToMaintain.includes(edge))
-			.forEach((edge) => graph.dropEdge(edge));
-	}
-
-	$: if (pubkey && targetPubkey) {
-		removeIrrelevantEdges({
-			sourcePubkey: pubkey,
-			targetPubkey: targetPubkey
-		});
-		updateSelfNode({ pubkey });
-		updateTargetNode({ pubkey: targetPubkey });
-	}
-
-	interface RepopulateGraph {
-		ratings: GraphRating[];
-	}
-
-	async function repopulateGraph({ ratings }: RepopulateGraph) {
-		await Promise.all(
-			ratings.map(async (rating) => {
-				await populateGraph({ rating });
-
-				await repopulateGraph({ ratings: rating.childrenRatings });
-			})
-		);
-	}
-
-	$: if ((pubkey && !targetPubkey) || (!pubkey && targetPubkey)) repopulateGraph({ ratings });
+	let renderGraph: RenderGraph | undefined;
 </script>
 
 <div class="flex h-full w-full flex-col overflow-hidden">
@@ -542,5 +475,13 @@
 		</div>
 	</div>
 
-	<RenderGraph bind:this={renderGraph} nodeWidths={nodeWidths} edgeWidths={edgeWidths} bind:physicsEnabled={physicsEnabled} graph={graph} />
+	<RenderGraph
+		bind:source={pubkey}
+		bind:target={targetPubkey}
+		bind:this={renderGraph}
+		{nodeWidths}
+		{edgeWidths}
+		bind:physicsEnabled
+		{graph}
+	/>
 </div>
