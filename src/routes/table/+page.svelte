@@ -335,7 +335,7 @@
 				<tr>
 					<td>
 						<div class="flex items-center gap-4 px-2">
-							<a href="https://njump.me/{rating.from.npub}" target="_blank">
+							<a href="https://njump.me/{rating.from.npub}" target="_blank" class="h-full w-full">
 								<ProfileAvatar source={rating.from.picture} />
 							</a>
 							<div class="font-medium text-white">
@@ -358,7 +358,7 @@
 					</td>
 					<td>
 						<div class="flex items-center gap-4 px-2">
-							<a href="https://njump.me/{rating.to.npub}" target="_blank">
+							<a href="https://njump.me/{rating.to.npub}" target="_blank" class="h-full w-full">
 								<ProfileAvatar source={rating.to.picture} />
 							</a>
 
