@@ -75,6 +75,20 @@
 					const degree = filteredGraph.degree(node);
 
 					if (degree <= 0) nodesToRemove.add(node);
+
+					if (source) {
+						const possiblePaths = allSimplePaths(filteredGraph, source, node);
+
+						if (possiblePaths.length <= 0) nodesToRemove.add(node);
+
+						return;
+					}
+
+					if (target) {
+						const possiblePaths = allSimplePaths(filteredGraph, node, target);
+
+						if (possiblePaths.length <= 0) nodesToRemove.add(node);
+					}
 				});
 
 				nodesToRemove.forEach((node) => filteredGraph.dropNode(node));
