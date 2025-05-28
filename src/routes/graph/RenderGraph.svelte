@@ -3,7 +3,7 @@
 	import { DataSet } from 'vis-data';
 	import { Network, type Node, type Edge } from 'vis-network';
 	import type Graph from 'graphology';
-	import type { ReviewFilterType } from './types'
+	import type { RatingFilterType } from './types'
 	import { nip19 } from 'nostr-tools';
 	import { toasts } from 'svelte-toasts';
 	import { allSimplePaths } from 'graphology-simple-path';
@@ -33,7 +33,7 @@
 
 	export let target: string | undefined;
 
-	export let reviewFilter: ReviewFilterType;
+	export let ratingFilter: RatingFilterType;
 
 	export function render() {
 		function clearData() {
@@ -66,9 +66,9 @@
 					negative: (edge, edgeColor) => {
 						if (edgeColor === 'green') edgesToRemove.add(edge);
 					}
-				} as Record<ReviewFilterType, (edge: string, edgeColor: string) => void>;
+					} as Record<RatingFilterType, (edge: string, edgeColor: string) => void>;
 
-				const filterEdgeAction = filterEdgeActions[reviewFilter];
+				const filterEdgeAction = filterEdgeActions[ratingFilter];
 
 				filteredGraph.forEachEdge((edge) => {
 					const edgeColor = graph.getEdgeAttribute(edge, 'color') as string;
@@ -152,9 +152,9 @@
 				const validationByFilterMap = {
 					positive: () => !pathHasProhibitedEdge('red'),
 					negative: () => !pathHasProhibitedEdge('green')
-				} as Record<ReviewFilterType, () => boolean>;
+				} as Record<RatingFilterType, () => boolean>;
 
-				const validationByFilter = validationByFilterMap[reviewFilter];
+				const validationByFilter = validationByFilterMap[ratingFilter];
 
 				if (validationByFilter) {
 					const isValidRoute = validationByFilter();
@@ -255,7 +255,7 @@
 		clearOldEdges();
 	}
 
-	$: reviewFilter, render();
+	$: ratingFilter, render();
 
 	interface HoverWidths {
 		width: number;
