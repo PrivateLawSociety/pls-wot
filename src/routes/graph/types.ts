@@ -6,4 +6,6 @@ export interface GraphRating extends Rating {
 	currentDepth: number;
 }
 
-export type ReviewFilterType = 'positive' | 'negative' | 'all';
+export const RatingFilterTypes = ['positive', 'negative', 'all'] as const;
+
+export type RatingFilterType = (typeof RatingFilterTypes)[number];

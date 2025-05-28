@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Graph from 'graphology';
 	import type { Node, Edge } from 'vis-network';
-	import type { GraphRating, ReviewFilterType } from './types';
+	import type { GraphRating, RatingFilterType } from './types';
 	import 'vis-network/styles/vis-network.css';
 
 	import {
@@ -563,7 +563,7 @@
 
 	let physicsEnabled = true;
 
-	let reviewFilter: ReviewFilterType = 'all';
+	let ratingFilter: RatingFilterType = 'all';
 
 	let renderGraph: RenderGraph | undefined;
 
@@ -620,7 +620,7 @@
 				<div class="flex flex-row items-center gap-x-3">
 					<Select
 						id="filterReview"
-						bind:value={reviewFilter}
+						bind:value={ratingFilter}
 						items={[
 							{ value: 'all', name: 'All' },
 							{ value: 'positive', name: '✅ Positive' },
@@ -645,7 +645,7 @@
 		bind:source={pubkey}
 		bind:target={targetPubkey}
 		bind:this={renderGraph}
-		bind:reviewFilter
+		bind:ratingFilter
 		bind:physicsEnabled
 		{nodeWidths}
 		{edgeWidths}
