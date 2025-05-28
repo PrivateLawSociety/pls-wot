@@ -3,6 +3,7 @@
 	import { DataSet } from 'vis-data';
 	import { Network, type Node, type Edge } from 'vis-network';
 	import type Graph from 'graphology';
+	import type { ReviewFilterType } from './types'
 	import { nip19 } from 'nostr-tools';
 	import { toasts } from 'svelte-toasts';
 	import { allSimplePaths } from 'graphology-simple-path';
@@ -32,9 +33,7 @@
 
 	export let target: string | undefined;
 
-	export let positiveReviewsEnabled: boolean;
-
-	export let negativeReviewsEnabled: boolean;
+	export let reviewFilter: ReviewFilterType;
 
 	export function render() {
 		function clearData() {
@@ -53,16 +52,21 @@
 
 				const edgesToRemove = new Set<string>();
 
-				filteredGraph.forEachEdge((edge) => {
-					const edgeColor = graph.getEdgeAttribute(edge, 'color');
-
-					if (!positiveReviewsEnabled) {
+				const filterEdgeActions = {
+					positive: (edge, edgeColor) => {
+						if (edgeColor === 'red') edgesToRemove.add(edge);
+					},
+					negative: (edge, edgeColor) => {
 						if (edgeColor === 'green') edgesToRemove.add(edge);
 					}
+				} as Record<ReviewFilterType, (edge: string, edgeColor: string) => void>;
 
-					if (!negativeReviewsEnabled) {
-						if (edgeColor === 'red') edgesToRemove.add(edge);
-					}
+				const filterEdgeAction = filterEdgeActions[reviewFilter];
+
+				filteredGraph.forEachEdge((edge) => {
+					const edgeColor = graph.getEdgeAttribute(edge, 'color') as string;
+
+					filterEdgeAction?.(edge, edgeColor);
 				});
 
 				edgesToRemove.forEach((edge) => filteredGraph.dropEdge(edge));
@@ -138,12 +142,17 @@
 					return false;
 				}
 
-				if (!positiveReviewsEnabled) {
-					if (pathHasProhibitedEdge('green')) return false;
-				}
+				const validationByFilterMap = {
+					positive: () => !pathHasProhibitedEdge('red'),
+					negative: () => !pathHasProhibitedEdge('green')
+				} as Record<ReviewFilterType, () => boolean>;
 
-				if (!negativeReviewsEnabled) {
-					if (pathHasProhibitedEdge('red')) return false;
+				const validationByFilter = validationByFilterMap[reviewFilter];
+
+				if (validationByFilter) {
+					const isValidRoute = validationByFilter();
+
+					if (!isValidRoute) return false;
 				}
 
 				return true;
@@ -239,7 +248,7 @@
 		clearOldEdges();
 	}
 
-	$: positiveReviewsEnabled, negativeReviewsEnabled, render();
+	$: reviewFilter, render();
 
 	interface HoverWidths {
 		width: number;
