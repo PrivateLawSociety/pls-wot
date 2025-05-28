@@ -52,7 +52,7 @@
 	let processNpubError: boolean = false;
 
 	function loadPubkey() {
-		const urlNpub = page.url.searchParams.get('npub');
+		const urlNpub = page.url.searchParams.get('mainNpub');
 
 		try {
 			if (urlNpub) {
@@ -74,7 +74,7 @@
 	}
 
 	function loadNpub() {
-		const urlNpub = page.url.searchParams.get('npub');
+		const urlNpub = page.url.searchParams.get('mainNpub');
 
 		if (urlNpub) return urlNpub;
 
@@ -92,7 +92,7 @@
 			processNpubError = error;
 
 			pubkey = undefined;
-			page.url.searchParams.delete('npub');
+			page.url.searchParams.delete('mainNpub');
 			replaceState(page.url, page.state);
 		}
 
@@ -100,7 +100,7 @@
 			processNpubError = false;
 
 			pubkey = newPubkey;
-			page.url.searchParams.set('npub', npub!);
+			page.url.searchParams.set('mainNpub', npub!);
 			replaceState(page.url, page.state);
 		}
 
