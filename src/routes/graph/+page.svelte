@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Graph from 'graphology';
 	import type { Node, Edge } from 'vis-network';
-	import type { GraphRating, RatingFilterType } from './types';
+	import { isRatingFilter, type GraphRating, type RatingFilterType } from './types';
 	import 'vis-network/styles/vis-network.css';
 
 	import {
@@ -563,7 +563,33 @@
 
 	let physicsEnabled = true;
 
-	let ratingFilter: RatingFilterType = 'all';
+	let ratingFilter: RatingFilterType = loadRatingFilter();
+
+	function loadRatingFilter(): RatingFilterType {
+		const urlRatingFilter = page.url.searchParams.get('ratingType');
+
+		if (!urlRatingFilter) return 'all';
+
+		if (!isRatingFilter(urlRatingFilter)) {
+			return 'all';
+		}
+
+		return urlRatingFilter;
+	}
+
+	function updateRatingFilterUrl(ratingFilter: RatingFilterType) {
+		if (!pageInitialized) return;
+
+		if (ratingFilter === 'all') {
+			page.url.searchParams.delete('ratingType');
+		} else {
+			page.url.searchParams.set('ratingType', ratingFilter);
+		}
+
+		replaceState(page.url, page.state);
+	}
+
+	$: updateRatingFilterUrl(ratingFilter);
 
 	let renderGraph: RenderGraph | undefined;
 
