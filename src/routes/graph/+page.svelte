@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Graph from 'graphology';
 	import type { Node, Edge } from 'vis-network';
+	import type { GraphRating, ReviewFilterType } from './types';
 	import 'vis-network/styles/vis-network.css';
 
 	import {
@@ -10,14 +11,13 @@
 		relayList,
 		relayPool,
 		type ProfileType,
-		type Rating
 	} from '$lib/nostr';
 	import type { SubCloser } from 'nostr-tools/abstract-pool';
 	import { ReviewEvent } from '$lib';
 	import { nip19 } from 'nostr-tools';
 	import GraphRatingText from '$lib/components/GraphRatingText.svelte';
 	import { renderVirtualSvelteElement } from '$lib/rendering';
-	import { Checkbox, Helper, Input, Label } from 'flowbite-svelte';
+	import { Checkbox, Helper, Input, Label, Select } from 'flowbite-svelte';
 	import RenderGraph from './RenderGraph.svelte';
 
 	const depth = 3;
@@ -35,12 +35,6 @@
 	const subscriptions: Record<string, SubCloser> = {};
 
 	const graph: Graph<Node, Edge> = new Graph();
-
-	interface GraphRating extends Rating {
-		parentRatings: GraphRating[];
-		childrenRatings: GraphRating[];
-		currentDepth: number;
-	}
 
 	let ratings: GraphRating[] = [];
 
@@ -313,7 +307,7 @@
 		const displayName =
 			parsedMetadata.displayName || parsedMetadata.display_name || parsedMetadata.name;
 
-		const isUserPubkey = userPubkey && (pubkey === userPubkey);
+		const isUserPubkey = userPubkey && pubkey === userPubkey;
 
 		const helperText = isUserPubkey ? '(You)' : '(Main rater)';
 
@@ -493,9 +487,7 @@
 
 	let physicsEnabled = true;
 
-	let positiveReviewsEnabled: boolean = true;
-
-	let negativeReviewsEnabled: boolean = true;
+	let reviewFilter: ReviewFilterType = 'all';
 
 	let renderGraph: RenderGraph | undefined;
 </script>
@@ -505,7 +497,7 @@
 		<div class="flex w-full flex-wrap items-center justify-center gap-4">
 			<div class="flex flex-col">
 				<Label for="filterFrom" class="font-semibold"
-					>Main rater npub {(userPubkey && (pubkey === userPubkey)) ? '(You)' : ''}</Label
+					>Main rater npub {userPubkey && pubkey === userPubkey ? '(You)' : ''}</Label
 				>
 				<Input
 					id="filterFrom"
@@ -535,17 +527,23 @@
 				{/if}
 			</div>
 
-			<div class="flex flex-col items-center">
-				<Label>Filters</Label>
+			<div class="flex flex-col">
+				<Label for="filterReview">Filter ratings type</Label>
 				<div class="flex flex-row items-center gap-x-3">
-					<div class="flex flex-col items-start">
-						<Checkbox bind:checked={positiveReviewsEnabled}>Positive reviews enabled</Checkbox>
-						<Checkbox bind:checked={negativeReviewsEnabled}>Negative reviews enabled</Checkbox>
-					</div>
-					<div class="flex flex-col items-start">
-						<Checkbox bind:checked={physicsEnabled}>Physics enabled</Checkbox>
-					</div>
+					<Select
+						id="filterReview"
+						bind:value={reviewFilter}
+						items={[
+							{ value: 'all', name: 'All' },
+							{ value: 'positive', name: '✅ Positive' },
+							{ value: 'negative', name: '❌ Negative' }
+						]}
+					/>
 				</div>
+			</div>
+
+			<div class="flex flex-col">
+				<Checkbox bind:checked={physicsEnabled}>Physics enabled</Checkbox>
 			</div>
 		</div>
 	</div>
@@ -554,11 +552,10 @@
 		bind:source={pubkey}
 		bind:target={targetPubkey}
 		bind:this={renderGraph}
+		bind:reviewFilter
+		bind:physicsEnabled
 		{nodeWidths}
 		{edgeWidths}
-		bind:physicsEnabled
-		bind:positiveReviewsEnabled
-		bind:negativeReviewsEnabled
 		{graph}
 	/>
 </div>
