@@ -42,8 +42,15 @@
 		}
 
 		if (!source && !target) {
-			clearData();
-			return;
+			return clearData();
+		}
+
+		if (source && !graph.hasNode(source)) {
+			return clearData();
+		}
+
+		if (target && !graph.hasNode(target)) {
+			return clearData();
 		}
 
 		function getData() {
