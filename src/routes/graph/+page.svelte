@@ -10,7 +10,7 @@
 		parseProfileFromJsonString,
 		relayList,
 		relayPool,
-		type ProfileType,
+		type ProfileType
 	} from '$lib/nostr';
 	import type { SubCloser } from 'nostr-tools/abstract-pool';
 	import { ReviewEvent } from '$lib';
@@ -19,6 +19,9 @@
 	import { renderVirtualSvelteElement } from '$lib/rendering';
 	import { Checkbox, Helper, Input, Label, Select } from 'flowbite-svelte';
 	import RenderGraph from './RenderGraph.svelte';
+	import { page } from '$app/state';
+	import { onMount } from 'svelte';
+	import { replaceState } from '$app/navigation';
 
 	const depth = 3;
 
@@ -38,6 +41,8 @@
 
 	let ratings: GraphRating[] = [];
 
+	let pageInitialized = false;
+
 	const userPubkey = nostrAuth.getPubkey();
 
 	let pubkey: string | undefined = loadPubkey();
@@ -47,27 +52,59 @@
 	let processNpubError: boolean = false;
 
 	function loadPubkey() {
+		const urlNpub = page.url.searchParams.get('npub');
+
+		try {
+			if (urlNpub) {
+				const newPubkey = nip19.decode(urlNpub);
+
+				if (newPubkey.type !== 'npub') {
+					processNpubError = true;
+					return;
+				}
+
+				return newPubkey.data;
+			}
+		} catch {
+			processNpubError = true;
+			return;
+		}
+
 		return nostrAuth.getPubkey();
 	}
 
 	function loadNpub() {
+		const urlNpub = page.url.searchParams.get('npub');
+
+		if (urlNpub) return urlNpub;
+
 		const pubkey = nostrAuth.getPubkey();
 
 		if (!pubkey) return;
 
-		return nip19.npubEncode(pubkey);
+		const npub = nip19.npubEncode(pubkey);
+
+		return npub;
 	}
 
 	function updatePubkey(npub: string | undefined) {
 		function clearPubkey(error: boolean) {
 			processNpubError = error;
+
 			pubkey = undefined;
+			page.url.searchParams.delete('npub');
+			replaceState(page.url, page.state);
 		}
 
 		function setPubkey(newPubkey: string) {
-			pubkey = newPubkey;
 			processNpubError = false;
+
+			pubkey = newPubkey;
+			page.url.searchParams.set('npub', npub!);
+			replaceState(page.url, page.state);
 		}
+
+		if (!pageInitialized) return;
 
 		if (!npub) {
 			return void clearPubkey(false);
@@ -88,22 +125,56 @@
 
 	$: updatePubkey(npub);
 
-	let targetPubkey: string | undefined = undefined;
+	let targetPubkey: string | undefined = loadTargetPubkey();
 
-	let targetNpub: string | undefined = undefined;
+	let targetNpub: string | undefined = loadTargetNpub();
 
 	let processTargetNpubError: boolean = false;
+
+	function loadTargetPubkey() {
+		const urlNpub = page.url.searchParams.get('targetNpub');
+
+		try {
+			if (!urlNpub) return;
+
+			const newTargetPubkey = nip19.decode(urlNpub);
+
+			if (newTargetPubkey.type !== 'npub') {
+				processTargetNpubError = true;
+				return;
+			}
+
+			return newTargetPubkey.data;
+		} catch {
+			processTargetNpubError = true;
+			return;
+		}
+	}
+
+	function loadTargetNpub() {
+		const urlNpub = page.url.searchParams.get('targetNpub');
+
+		if (urlNpub) return urlNpub;
+	}
 
 	function updateTargetPubkey(targetNpub: string | undefined) {
 		function clearPubkey(error: boolean) {
 			processTargetNpubError = error;
+
 			targetPubkey = undefined;
+			page.url.searchParams.delete('targetNpub');
+			replaceState(page.url, page.state);
 		}
 
 		function setPubkey(newPubkey: string) {
-			targetPubkey = newPubkey;
 			processTargetNpubError = false;
+
+			targetPubkey = newPubkey;
+			page.url.searchParams.set('targetNpub', targetNpub!);
+			replaceState(page.url, page.state);
 		}
+
+		if (!pageInitialized) return;
 
 		if (!targetNpub) {
 			return void clearPubkey(false);
@@ -464,8 +535,12 @@
 		targetPubkey,
 		firstSubscriptionEvent
 	}: RenewSubscriptionsParams) {
+		const originalPubkey = pubkey || targetPubkey;
+
+		if (!originalPubkey) return;
+
 		const ratingEventsProps: SubscribeRatingEventsParams = {
-			originalPubkey: pubkey || (targetPubkey as string),
+			originalPubkey,
 			depth,
 			fromTarget: !pubkey
 		};
@@ -490,6 +565,10 @@
 	let reviewFilter: ReviewFilterType = 'all';
 
 	let renderGraph: RenderGraph | undefined;
+
+	onMount(() => {
+		pageInitialized = true;
+	});
 </script>
 
 <div class="flex h-full w-full flex-col overflow-hidden">
