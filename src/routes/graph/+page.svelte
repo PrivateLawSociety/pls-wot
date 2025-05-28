@@ -17,11 +17,12 @@
 	import { nip19 } from 'nostr-tools';
 	import GraphRatingText from '$lib/components/GraphRatingText.svelte';
 	import { renderVirtualSvelteElement } from '$lib/rendering';
-	import { Checkbox, Helper, Input, Label, Select } from 'flowbite-svelte';
+	import { Button, Checkbox, Helper, Input, Label, Select } from 'flowbite-svelte';
 	import RenderGraph from './RenderGraph.svelte';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import { replaceState } from '$app/navigation';
+	import { toasts } from 'svelte-toasts';
 
 	const depth = 3;
 
@@ -569,6 +570,14 @@
 	onMount(() => {
 		pageInitialized = true;
 	});
+
+	async function copyLinkToClipboard() {
+		await navigator.clipboard.writeText(page.url.toString());
+		toasts.success({
+			title: 'Copied!',
+			description: 'Link copied to clipboard!'
+		});
+	}
 </script>
 
 <div class="flex h-full w-full flex-col overflow-hidden">
@@ -623,6 +632,11 @@
 
 			<div class="flex flex-col">
 				<Checkbox bind:checked={physicsEnabled}>Physics enabled</Checkbox>
+			</div>
+
+			<div class="flex flex-col">
+				<Label for="getGraphLink">Get graph link:</Label>
+				<Button on:click={() => copyLinkToClipboard()}>Copy to clipboard</Button>
 			</div>
 		</div>
 	</div>
