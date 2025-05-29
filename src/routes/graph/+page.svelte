@@ -85,6 +85,9 @@
 
 		const npub = nip19.npubEncode(pubkey);
 
+		page.url.searchParams.set('mainNpub', npub);
+		replaceState(page.url, page.state);
+
 		return npub;
 	}
 
