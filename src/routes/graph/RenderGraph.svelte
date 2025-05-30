@@ -3,7 +3,7 @@
 	import { DataSet } from 'vis-data';
 	import { Network, type Node, type Edge } from 'vis-network';
 	import type Graph from 'graphology';
-	import type { RatingFilterType } from './types'
+	import type { RatingFilterType } from './types';
 	import { nip19 } from 'nostr-tools';
 	import { toasts } from 'svelte-toasts';
 	import { allSimplePaths } from 'graphology-simple-path';
@@ -15,16 +15,14 @@
 
 	const physics = {
 		enabled: true,
-		barnesHut: {
-			theta: 0,
-			gravitationalConstant: -1000,
-			centralGravity: 0.05,
-			springLength: 80,
-			springConstant: 3 * 10 ** -5,
-			damping: 0.1,
-			avoidOverlap: 1
+		repulsion: {
+			centralGravity: 10 ** -3,
+			springLength: 1000,
+			springConstant: 10 ** -7,
+			nodeDistance: 250,
+			damping: 0.1
 		},
-		solver: 'barnesHut'
+		solver: 'repulsion'
 	};
 
 	export let graph: Graph<Node, Edge>;
@@ -66,7 +64,7 @@
 					negative: (edge, edgeColor) => {
 						if (edgeColor === 'green') edgesToRemove.add(edge);
 					}
-					} as Record<RatingFilterType, (edge: string, edgeColor: string) => void>;
+				} as Record<RatingFilterType, (edge: string, edgeColor: string) => void>;
 
 				const filterEdgeAction = filterEdgeActions[ratingFilter];
 
