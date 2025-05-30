@@ -664,8 +664,7 @@
 			</div>
 
 			<div class="flex flex-col">
-				<Label for="getGraphLink">Get graph link:</Label>
-				<Button on:click={() => copyLinkToClipboard()}>Copy to clipboard</Button>
+				<Button on:click={() => copyLinkToClipboard()}>Share this view</Button>
 			</div>
 		</div>
 	</div>
