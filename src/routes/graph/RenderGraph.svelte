@@ -3,10 +3,12 @@
 	import { DataSet } from 'vis-data';
 	import { Network, type Node, type Edge } from 'vis-network';
 	import type Graph from 'graphology';
-	import type { RatingFilterType } from './types';
+	import type { EdgeData, NodeData, NodeDataType, RatingFilterType } from './types';
 	import { nip19 } from 'nostr-tools';
 	import { toasts } from 'svelte-toasts';
 	import { allSimplePaths } from 'graphology-simple-path';
+	import { renderVirtualSvelteElement } from '$lib/rendering';
+	import GraphRatingText from '$lib/components/GraphRatingText.svelte';
 
 	const renderData = {
 		nodes: new DataSet<Node>(),
@@ -25,7 +27,9 @@
 		solver: 'repulsion'
 	};
 
-	export let graph: Graph<Node, Edge>;
+	export let userPubkey: string | undefined;
+
+	export let graph: Graph<NodeData, EdgeData>;
 
 	export let source: string | undefined;
 
@@ -58,20 +62,20 @@
 				const edgesToRemove = new Set<string>();
 
 				const filterEdgeActions = {
-					positive: (edge, edgeColor) => {
-						if (edgeColor === 'red') edgesToRemove.add(edge);
+					positive: (edge, edgeScore) => {
+						if (edgeScore === false) edgesToRemove.add(edge);
 					},
-					negative: (edge, edgeColor) => {
-						if (edgeColor === 'green') edgesToRemove.add(edge);
+					negative: (edge, edgeScore) => {
+						if (edgeScore === true) edgesToRemove.add(edge);
 					}
-				} as Record<RatingFilterType, (edge: string, edgeColor: string) => void>;
+				} as Record<RatingFilterType, (edge: string, edgeScore: boolean) => void>;
 
 				const filterEdgeAction = filterEdgeActions[ratingFilter];
 
 				filteredGraph.forEachEdge((edge) => {
-					const edgeColor = graph.getEdgeAttribute(edge, 'color') as string;
+					const edgeScore = graph.getEdgeAttribute(edge, 'score');
 
-					filterEdgeAction?.(edge, edgeColor);
+					filterEdgeAction?.(edge, edgeScore);
 				});
 
 				edgesToRemove.forEach((edge) => filteredGraph.dropEdge(edge));
@@ -107,16 +111,16 @@
 						const data = graph.getNodeAttributes(node);
 
 						return {
-							id: node,
-							...data
+							...data,
+							id: node
 						};
 					}),
 					edges: filteredGraph.edges().map((edge) => {
 						const data = graph.getEdgeAttributes(edge);
 
 						return {
-							id: edge,
-							...data
+							...data,
+							id: edge
 						};
 					})
 				};
@@ -127,7 +131,7 @@
 			const simplePaths = allSimplePaths(graph, source, target);
 
 			const relevantPaths = simplePaths.filter((pathGroup) => {
-				function pathHasProhibitedEdge(prohibitedColor: 'green' | 'red') {
+				function pathHasProhibitedEdge(prohibitedScore: boolean) {
 					for (const i in pathGroup.slice(1)) {
 						const previousNodeIndex = Number(i);
 
@@ -141,15 +145,15 @@
 
 						const edgeData = graph.getEdgeAttributes(edgeId);
 
-						if (edgeData.color === prohibitedColor) return true;
+						if (edgeData.score === prohibitedScore) return true;
 					}
 
 					return false;
 				}
 
 				const validationByFilterMap = {
-					positive: () => !pathHasProhibitedEdge('red'),
-					negative: () => !pathHasProhibitedEdge('green')
+					positive: () => !pathHasProhibitedEdge(false),
+					negative: () => !pathHasProhibitedEdge(true)
 				} as Record<RatingFilterType, () => boolean>;
 
 				const validationByFilter = validationByFilterMap[ratingFilter];
@@ -187,8 +191,8 @@
 					const data = graph.getNodeAttributes(node);
 
 					return {
-						id: node,
-						...data
+						...data,
+						id: node
 					};
 				});
 
@@ -204,8 +208,8 @@
 					const data = graph.getEdgeAttributes(edge);
 
 					return {
-						id: edge,
-						...data
+						...data,
+						id: edge
 					};
 				});
 
@@ -222,8 +226,47 @@
 			return;
 		}
 
-		nodes.forEach((node) => renderData.nodes.update(node));
-		edges.forEach((edge) => renderData.edges.update(edge));
+		nodes.forEach((node) => {
+			const displayNameFormatMap = {
+				source: (displayName) => {
+					const isUserPubkey = userPubkey && node.id === userPubkey;
+
+					const helperText = isUserPubkey ? '(You)' : '(Main rater)';
+
+					const text = displayName ? `${displayName} ${helperText}` : helperText;
+
+					return text;
+				},
+				target: (displayName) => (displayName ? `${displayName} (Target)` : '(Target)'),
+				common: (displayName) => displayName || 'Unknown (No profile name)'
+				} as Record<NodeDataType, (displayName?: string) => string>;
+
+			const displayNameGen = displayNameFormatMap[node.type];
+
+			const displayName = displayNameGen(node.displayName);
+
+			renderData.nodes.update({
+				id: node.id,
+				label: displayName,
+				title: displayName,
+				image: node.picture || '/avatar.svg',
+				group: node.type
+			});
+		});
+		edges.forEach((edge) => {
+			const ratingComponent = renderVirtualSvelteElement(GraphRatingText, {
+				text: edge.description
+			});
+
+			renderData.edges.update({
+				id: edge.id,
+				from: edge.from,
+				to: edge.to,
+				color: edge.score ? 'green' : 'red',
+				dashes: edge.businessAlreadyDone ? undefined : [2, 2, 10, 10],
+				title: ratingComponent
+			});
+		});
 
 		function clearOldNodes() {
 			if (nodes.length === renderData.nodes.length) return;
@@ -232,7 +275,7 @@
 
 			const excludedNodeIds = renderData.nodes
 				.map((node) => node.id!)
-				.filter((node) => !nodeIds.includes(node));
+				.filter((node) => !nodeIds.includes(node as string));
 
 			renderData.nodes.remove(excludedNodeIds);
 		}
@@ -244,7 +287,7 @@
 
 			const excludedEdgeIds = renderData.edges
 				.map((edge) => edge.id!)
-				.filter((edge) => !edgeIds.includes(edge));
+				.filter((edge) => !edgeIds.includes(edge as string));
 
 			renderData.edges.remove(excludedEdgeIds);
 		}
@@ -296,11 +339,17 @@
 				borderWidth: nodeWidths.width
 			},
 			groups: {
-				principal: {
-					size: 128
+				source: {
+					size: 128,
+					color: 'mediumblue'
+				},
+				target: {
+					size: 128,
+					color: 'yellow'
 				},
 				common: {
-					size: 64
+					size: 64,
+					color: '#6b7492'
 				}
 			},
 			edges: {
