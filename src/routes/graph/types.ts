@@ -13,3 +13,19 @@ export type RatingFilterType = (typeof RatingFilterTypes)[number];
 export function isRatingFilter(filter: string): filter is RatingFilterType {
 	return RatingFilterTypes.includes(filter as RatingFilterType);
 }
+
+export type NodeDataType = 'source' | 'target' | 'common';
+
+export interface NodeData {
+	displayName?: string;
+	picture?: string;
+	type: NodeDataType;
+}
+
+export interface EdgeData {
+	from: string;
+	to: string;
+	score: boolean;
+	businessAlreadyDone: boolean;
+	description: string;
+}

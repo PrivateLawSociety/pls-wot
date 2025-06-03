@@ -1,7 +1,12 @@
 <script lang="ts">
 	import Graph from 'graphology';
-	import type { Node, Edge } from 'vis-network';
-	import { isRatingFilter, type GraphRating, type RatingFilterType } from './types';
+	import {
+		isRatingFilter,
+		type EdgeData,
+		type GraphRating,
+		type NodeData,
+		type RatingFilterType
+	} from './types';
 	import 'vis-network/styles/vis-network.css';
 
 	import {
@@ -15,8 +20,6 @@
 	import type { SubCloser } from 'nostr-tools/abstract-pool';
 	import { ReviewEvent } from '$lib';
 	import { nip19 } from 'nostr-tools';
-	import GraphRatingText from '$lib/components/GraphRatingText.svelte';
-	import { renderVirtualSvelteElement } from '$lib/rendering';
 	import { Button, Checkbox, Helper, Input, Label, Select } from 'flowbite-svelte';
 	import RenderGraph from './RenderGraph.svelte';
 	import { page } from '$app/state';
@@ -38,7 +41,7 @@
 
 	const subscriptions: Record<string, SubCloser> = {};
 
-	const graph: Graph<Node, Edge> = new Graph();
+	const graph: Graph<NodeData, EdgeData> = new Graph();
 
 	let ratings: GraphRating[] = [];
 
@@ -375,51 +378,37 @@
 	}
 
 	async function updateSelfNode({ pubkey }: UpdateSelfNodeParams) {
-		const profileMetadata = await getProfileMetadata(pubkey);
-		const parsedMetadata = parseProfileFromJsonString(profileMetadata?.content || '{}', {
-			pubkey
-		});
-		const displayName =
-			parsedMetadata.displayName || parsedMetadata.display_name || parsedMetadata.name;
-
-		const isUserPubkey = userPubkey && pubkey === userPubkey;
-
-		const helperText = isUserPubkey ? '(You)' : '(Main rater)';
-
-		const titleText = displayName ? `${displayName} ${helperText}` : helperText;
-
 		const olderNodeId = graph.findNode((node) => {
-			const nodeColor = graph.getNodeAttribute(node, 'color');
+			const nodeType = graph.getNodeAttribute(node, 'type');
 
-			if (nodeColor === 'mediumblue') return true;
+			if (nodeType === 'source') return true;
 
 			return false;
 		});
 
 		if (olderNodeId) {
-			const profileMetadata = await getProfileMetadata(olderNodeId);
-			const parsedMetadata = parseProfileFromJsonString(profileMetadata?.content || '{}', {
-				pubkey
-			});
-			const displayName =
-				parsedMetadata.displayName || parsedMetadata.display_name || parsedMetadata.name;
-
 			graph.mergeNode(olderNodeId, {
-				label: displayName,
-				title: displayName,
-				image: parsedMetadata.picture || '/avatar.svg',
-				color: '#6b7492',
-				group: 'common'
+				type: 'common'
 			});
 		}
 
-		graph.mergeNode(pubkey, {
-			label: titleText,
-			title: titleText,
-			image: parsedMetadata.picture || '/avatar.svg',
-			color: 'mediumblue',
-			group: 'principal'
-		});
+		if (graph.hasNode(pubkey)) {
+			graph.mergeNode({
+				type: 'source'
+			});
+		} else {
+			const profileMetadata = await getProfileMetadata(pubkey);
+			const profile = parseProfileFromJsonString(profileMetadata?.content || '{}', {
+				pubkey
+			});
+			const displayName = profile.displayName || profile.display_name || profile.name;
+
+			graph.mergeNode(pubkey, {
+				displayName,
+				picture: profile.picture,
+				type: 'source'
+			});
+		}
 
 		renderGraph?.render();
 	}
@@ -431,47 +420,37 @@
 	}
 
 	async function updateTargetNode({ pubkey }: UpdateTargetNodeParams) {
-		const profileMetadata = await getProfileMetadata(pubkey);
-		const parsedMetadata = parseProfileFromJsonString(profileMetadata?.content || '{}', {
-			pubkey
-		});
-		const displayName =
-			parsedMetadata.displayName || parsedMetadata.display_name || parsedMetadata.name;
-
-		const titleText = displayName ? `${displayName} (Target)` : '(Target)';
-
 		const olderNodeId = graph.findNode((node) => {
-			const nodeColor = graph.getNodeAttribute(node, 'color');
+			const nodeType = graph.getNodeAttribute(node, 'type');
 
-			if (nodeColor === 'yellow') return true;
+			if (nodeType === 'target') return true;
 
 			return false;
 		});
 
 		if (olderNodeId) {
-			const profileMetadata = await getProfileMetadata(olderNodeId);
-			const parsedMetadata = parseProfileFromJsonString(profileMetadata?.content || '{}', {
-				pubkey
-			});
-			const displayName =
-				parsedMetadata.displayName || parsedMetadata.display_name || parsedMetadata.name;
-
 			graph.mergeNode(olderNodeId, {
-				label: displayName,
-				title: displayName,
-				image: parsedMetadata.picture || '/avatar.svg',
-				color: '#6b7492',
-				group: 'common'
+				type: 'common'
 			});
 		}
 
-		graph.mergeNode(pubkey, {
-			label: titleText,
-			title: titleText,
-			image: parsedMetadata.picture || '/avatar.svg',
-			color: 'yellow',
-			group: 'principal'
-		});
+		if (graph.hasNode(pubkey)) {
+			graph.mergeNode(pubkey, {
+				type: 'target'
+			});
+		} else {
+			const profileMetadata = await getProfileMetadata(pubkey);
+			const profile = parseProfileFromJsonString(profileMetadata?.content || '{}', {
+				pubkey
+			});
+			const displayName = profile.displayName || profile.display_name || profile.name;
+
+			graph.mergeNode(pubkey, {
+				displayName,
+				picture: profile.picture,
+				type: 'target'
+			});
+		}
 
 		renderGraph?.render();
 	}
@@ -498,31 +477,23 @@
 
 			const username = profile.displayName || profile.display_name || profile.name;
 
-			const displayName = username || 'Unknown (No profile name)';
-
-			const image = profile.picture || '/avatar.svg';
+			const displayName = username;
 
 			graph.mergeNode(profile.pubkey, {
-				label: displayName,
-				title: displayName,
-				image,
-				color: '#6b7492',
-				group: 'common'
+				displayName,
+				picture: profile.picture,
+				type: 'common'
 			});
 		}
 
 		await Promise.all([mergeNode(rating.from), mergeNode(rating.to)]);
 
-		const ratingComponent = renderVirtualSvelteElement(GraphRatingText, {
-			text: rating.description
-		});
-
 		graph.mergeDirectedEdge(rating.from.pubkey, rating.to.pubkey, {
 			from: rating.from.pubkey,
 			to: rating.to.pubkey,
-			color: rating.score ? 'green' : 'red',
-			dashes: rating.businessAlreadyDone ? undefined : [2, 2, 10, 10],
-			title: ratingComponent
+			score: rating.score,
+			businessAlreadyDone: rating.businessAlreadyDone,
+			description: rating.description
 		});
 
 		renderGraph?.render();
@@ -675,6 +646,7 @@
 		bind:this={renderGraph}
 		bind:ratingFilter
 		bind:physicsEnabled
+		{userPubkey}
 		{nodeWidths}
 		{edgeWidths}
 		{graph}
