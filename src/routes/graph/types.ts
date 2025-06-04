@@ -27,7 +27,6 @@ export type NodeDataType = 'source' | 'target' | 'common';
 export interface NodeData {
 	displayName?: string;
 	picture?: string;
-	type: NodeDataType;
 }
 
 export interface EdgeData {

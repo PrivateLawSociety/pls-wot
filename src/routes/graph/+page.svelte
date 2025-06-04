@@ -380,116 +380,19 @@
 		renderGraph?.render();
 	}
 
-	interface UpdateSelfNodeParams {
-		pubkey: string;
-	}
-
-	async function updateSelfNode({ pubkey }: UpdateSelfNodeParams) {
-		const olderNodeId = graph.findNode((node) => {
-			const nodeType = graph.getNodeAttribute(node, 'type');
-
-			if (nodeType === 'source') return true;
-
-			return false;
-		});
-
-		if (olderNodeId) {
-			graph.mergeNode(olderNodeId, {
-				type: 'common'
-			});
-		}
-
-		if (graph.hasNode(pubkey)) {
-			graph.mergeNode({
-				type: 'source'
-			});
-		} else {
-			const profileMetadata = await getProfileMetadata(pubkey);
-			const profile = parseProfileFromJsonString(profileMetadata?.content || '{}', {
-				pubkey
-			});
-			const displayName = profile.displayName || profile.display_name || profile.name;
-
-			graph.mergeNode(pubkey, {
-				displayName,
-				picture: profile.picture,
-				type: 'source'
-			});
-		}
-
-		renderGraph?.render();
-	}
-
-	$: if (pubkey) updateSelfNode({ pubkey });
-
-	interface UpdateTargetNodeParams {
-		pubkey: string;
-	}
-
-	async function updateTargetNode({ pubkey }: UpdateTargetNodeParams) {
-		const olderNodeId = graph.findNode((node) => {
-			const nodeType = graph.getNodeAttribute(node, 'type');
-
-			if (nodeType === 'target') return true;
-
-			return false;
-		});
-
-		if (olderNodeId) {
-			graph.mergeNode(olderNodeId, {
-				type: 'common'
-			});
-		}
-
-		if (graph.hasNode(pubkey)) {
-			graph.mergeNode(pubkey, {
-				type: 'target'
-			});
-		} else {
-			const profileMetadata = await getProfileMetadata(pubkey);
-			const profile = parseProfileFromJsonString(profileMetadata?.content || '{}', {
-				pubkey
-			});
-			const displayName = profile.displayName || profile.display_name || profile.name;
-
-			graph.mergeNode(pubkey, {
-				displayName,
-				picture: profile.picture,
-				type: 'target'
-			});
-		}
-
-		renderGraph?.render();
-	}
-
-	$: if (targetPubkey) updateTargetNode({ pubkey: targetPubkey });
-
 	interface PopupateGraphParams {
 		rating: GraphRating;
 	}
 
 	async function populateGraph({ rating }: PopupateGraphParams) {
-		if (pubkey && !graph.hasNode(pubkey)) {
-			await updateSelfNode({ pubkey });
-		}
-
-		if (targetPubkey && !graph.hasNode(pubkey)) {
-			await updateTargetNode({ pubkey: targetPubkey });
-		}
-
 		async function mergeNode(profile: ProfileType) {
-			if (profile.pubkey === pubkey) return;
-
-			if (profile.pubkey === targetPubkey) return;
-
 			const username = profile.displayName || profile.display_name || profile.name;
 
 			const displayName = username;
 
 			graph.mergeNode(profile.pubkey, {
 				displayName,
-				picture: profile.picture,
-				type: 'common'
+				picture: profile.picture
 			});
 		}
 
