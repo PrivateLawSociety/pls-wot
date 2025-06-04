@@ -64,6 +64,14 @@
 		}
 
 		function getData() {
+			function getNodeType(node: string): NodeDataType {
+				if (node === source) return 'source';
+
+				if (node === target) return 'target';
+
+				return 'common';
+			}
+
 			function defaultData() {
 				const filteredGraph = graph.copy();
 
@@ -139,7 +147,8 @@
 
 						return {
 							...data,
-							id: node
+							id: node,
+							type: getNodeType(node)
 						};
 					}),
 					edges: filteredGraph.edges().map((edge) => {
@@ -233,7 +242,8 @@
 
 					return {
 						...data,
-						id: node
+						id: node,
+						type: getNodeType(node)
 					};
 				});
 
@@ -294,6 +304,7 @@
 				group: node.type
 			});
 		});
+
 		edges.forEach((edge) => {
 			const ratingComponent = renderVirtualSvelteElement(GraphRatingText, {
 				text: edge.description
@@ -337,7 +348,7 @@
 		clearOldEdges();
 	}
 
-	$: ratingScoreFilter, ratingHadBusinessFilter, render();
+	$: ratingScoreFilter, ratingHadBusinessFilter, source, target, render();
 
 	interface HoverWidths {
 		width: number;
