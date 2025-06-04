@@ -1,13 +1,20 @@
 <script lang="ts">
 	import Graph from 'graphology';
 	import {
-		isRatingFilter,
+		isRatingFilterHadBusiness,
+		isRatingFilterScore,
 		type EdgeData,
 		type GraphRating,
 		type NodeData,
-		type RatingFilterType
+		type RatingFilterHadBusinessType,
+		type RatingFilterScoreType
 	} from './types';
 	import 'vis-network/styles/vis-network.css';
+
+	/*
+	TODO:
+	- Isolate renderization layer and data layer
+	*/
 
 	import {
 		getProfileMetadata,
@@ -537,21 +544,21 @@
 
 	let physicsEnabled = true;
 
-	let ratingFilter: RatingFilterType = loadRatingFilter();
+	let ratingScoreFilter: RatingFilterScoreType = loadRatingScoreFilter();
 
-	function loadRatingFilter(): RatingFilterType {
+	function loadRatingScoreFilter(): RatingFilterScoreType {
 		const urlRatingFilter = page.url.searchParams.get('ratingType');
 
 		if (!urlRatingFilter) return 'all';
 
-		if (!isRatingFilter(urlRatingFilter)) {
+		if (!isRatingFilterScore(urlRatingFilter)) {
 			return 'all';
 		}
 
 		return urlRatingFilter;
 	}
 
-	function updateRatingFilterUrl(ratingFilter: RatingFilterType) {
+	function updateRatingScoreFilterUrl(ratingFilter: RatingFilterScoreType) {
 		if (!pageInitialized) return;
 
 		if (ratingFilter === 'all') {
@@ -563,7 +570,33 @@
 		replaceState(page.url, page.state);
 	}
 
-	$: updateRatingFilterUrl(ratingFilter);
+	$: updateRatingScoreFilterUrl(ratingScoreFilter);
+
+	let ratingHadBusinessFilter: RatingFilterHadBusinessType = loadRatingHadBusinessFilter();
+
+	function loadRatingHadBusinessFilter(): RatingFilterHadBusinessType {
+		const urlRatingFilter = page.url.searchParams.get('hadBusiness');
+
+		if (!urlRatingFilter) return 'all';
+
+		if (!isRatingFilterHadBusiness(urlRatingFilter)) return 'all';
+
+		return urlRatingFilter;
+	}
+
+	function updateRatingHadBusinessFilterUrl(ratingFilter: RatingFilterHadBusinessType) {
+		if (!pageInitialized) return;
+
+		if (ratingFilter === 'all') {
+			page.url.searchParams.delete('hadBusiness');
+		} else {
+			page.url.searchParams.set('hadBusiness', ratingFilter);
+		}
+
+		replaceState(page.url, page.state);
+	}
+
+	$: updateRatingHadBusinessFilterUrl(ratingHadBusinessFilter);
 
 	let renderGraph: RenderGraph | undefined;
 
@@ -620,11 +653,26 @@
 				<div class="flex flex-row items-center gap-x-3">
 					<Select
 						id="filterReview"
-						bind:value={ratingFilter}
+						bind:value={ratingScoreFilter}
 						items={[
 							{ value: 'all', name: 'All' },
 							{ value: 'positive', name: '✅ Positive' },
 							{ value: 'negative', name: '❌ Negative' }
+						]}
+					/>
+				</div>
+			</div>
+
+			<div class="flex flex-col">
+				<Label for="filterReview">Filter by business already done</Label>
+				<div class="flex flex-row items-center gap-x-3">
+					<Select
+						id="filterReview"
+						bind:value={ratingHadBusinessFilter}
+						items={[
+							{ value: 'all', name: 'All' },
+							{ value: 'yes', name: '✅ Yes' },
+							{ value: 'no', name: '❌ No' }
 						]}
 					/>
 				</div>
@@ -644,7 +692,8 @@
 		bind:source={pubkey}
 		bind:target={targetPubkey}
 		bind:this={renderGraph}
-		bind:ratingFilter
+		bind:ratingScoreFilter
+		bind:ratingHadBusinessFilter
 		bind:physicsEnabled
 		{userPubkey}
 		{nodeWidths}

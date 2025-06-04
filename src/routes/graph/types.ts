@@ -6,12 +6,20 @@ export interface GraphRating extends Rating {
 	currentDepth: number;
 }
 
-export const RatingFilterTypes = ['positive', 'negative', 'all'] as const;
+export const RatingFilterScoreTypes = ['positive', 'negative', 'all'] as const;
 
-export type RatingFilterType = (typeof RatingFilterTypes)[number];
+export type RatingFilterScoreType = (typeof RatingFilterScoreTypes)[number];
 
-export function isRatingFilter(filter: string): filter is RatingFilterType {
-	return RatingFilterTypes.includes(filter as RatingFilterType);
+export function isRatingFilterScore(filter: string): filter is RatingFilterScoreType {
+	return RatingFilterScoreTypes.includes(filter as RatingFilterScoreType);
+}
+
+export const RatingFilterHadBusinessTypes = ['yes', 'no', 'all'] as const;
+
+export type RatingFilterHadBusinessType = (typeof RatingFilterHadBusinessTypes)[number];
+
+export function isRatingFilterHadBusiness(filter: string): filter is RatingFilterHadBusinessType {
+	return RatingFilterHadBusinessTypes.includes(filter as RatingFilterHadBusinessType);
 }
 
 export type NodeDataType = 'source' | 'target' | 'common';
