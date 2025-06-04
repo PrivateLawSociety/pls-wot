@@ -3,7 +3,13 @@
 	import { DataSet } from 'vis-data';
 	import { Network, type Node, type Edge } from 'vis-network';
 	import type Graph from 'graphology';
-	import type { EdgeData, NodeData, NodeDataType, RatingFilterType } from './types';
+	import type {
+		RatingFilterHadBusinessType,
+		EdgeData,
+		NodeData,
+		NodeDataType,
+		RatingFilterScoreType
+	} from './types';
 	import { nip19 } from 'nostr-tools';
 	import { toasts } from 'svelte-toasts';
 	import { allSimplePaths } from 'graphology-simple-path';
@@ -35,7 +41,9 @@
 
 	export let target: string | undefined;
 
-	export let ratingFilter: RatingFilterType;
+	export let ratingScoreFilter: RatingFilterScoreType;
+
+	export let ratingHadBusinessFilter: RatingFilterHadBusinessType;
 
 	export function render() {
 		function clearData() {
@@ -61,21 +69,40 @@
 
 				const edgesToRemove = new Set<string>();
 
-				const filterEdgeActions = {
-					positive: (edge, edgeScore) => {
-						if (edgeScore === false) edgesToRemove.add(edge);
-					},
-					negative: (edge, edgeScore) => {
-						if (edgeScore === true) edgesToRemove.add(edge);
-					}
-				} as Record<RatingFilterType, (edge: string, edgeScore: boolean) => void>;
+				const filterEdgeByScoreMap: Record<RatingFilterScoreType, (edgeScore: boolean) => boolean> =
+					{
+						positive: (edgeScore) => edgeScore === false,
+						negative: (edgeScore) => edgeScore === true,
+						all: () => false
+					};
 
-				const filterEdgeAction = filterEdgeActions[ratingFilter];
+				const shouldExcludeActionByScore = filterEdgeByScoreMap[ratingScoreFilter];
+
+				const filterEdgeByHadBusinesMap: Record<
+					RatingFilterHadBusinessType,
+					(edgeHadBusiness: boolean) => boolean
+				> = {
+					yes: (edgeHadBusiness) => edgeHadBusiness === false,
+					no: (edgeHadBusiness) => edgeHadBusiness === true,
+					all: () => false
+				};
+
+				const shouldExcludeActionByHadBusiness = filterEdgeByHadBusinesMap[ratingHadBusinessFilter];
 
 				filteredGraph.forEachEdge((edge) => {
 					const edgeScore = graph.getEdgeAttribute(edge, 'score');
 
-					filterEdgeAction?.(edge, edgeScore);
+					if (shouldExcludeActionByScore(edgeScore)) {
+						edgesToRemove.add(edge);
+						return;
+					}
+
+					const hadBusiness = graph.getEdgeAttribute(edge, 'businessAlreadyDone');
+
+					if (shouldExcludeActionByHadBusiness(hadBusiness)) {
+						edgesToRemove.add(edge);
+						return;
+					}
 				});
 
 				edgesToRemove.forEach((edge) => filteredGraph.dropEdge(edge));
@@ -131,7 +158,10 @@
 			const simplePaths = allSimplePaths(graph, source, target);
 
 			const relevantPaths = simplePaths.filter((pathGroup) => {
-				function pathHasProhibitedEdge(prohibitedScore: boolean) {
+				function pathHasProhibitedEdgeAttribute<K extends keyof EdgeData>(
+					edgeAttribute: K,
+					prohibitedValue: EdgeData[K]
+				) {
 					for (const i in pathGroup.slice(1)) {
 						const previousNodeIndex = Number(i);
 
@@ -145,23 +175,34 @@
 
 						const edgeData = graph.getEdgeAttributes(edgeId);
 
-						if (edgeData.score === prohibitedScore) return true;
+						if (edgeData[edgeAttribute] === prohibitedValue) return true;
 					}
 
 					return false;
 				}
 
-				const validationByFilterMap = {
-					positive: () => !pathHasProhibitedEdge(false),
-					negative: () => !pathHasProhibitedEdge(true)
-				} as Record<RatingFilterType, () => boolean>;
+				const filterByScoreMap: Record<RatingFilterScoreType, () => boolean> = {
+					positive: () => pathHasProhibitedEdgeAttribute('score', false),
+					negative: () => pathHasProhibitedEdgeAttribute('score', true),
+					all: () => false
+				};
 
-				const validationByFilter = validationByFilterMap[ratingFilter];
+				const shouldExcludeRouteByScore = filterByScoreMap[ratingScoreFilter];
 
-				if (validationByFilter) {
-					const isValidRoute = validationByFilter();
+				if (shouldExcludeRouteByScore()) {
+					return false;
+				}
 
-					if (!isValidRoute) return false;
+				const filterByHadBusinessMap: Record<RatingFilterHadBusinessType, () => boolean> = {
+					yes: () => pathHasProhibitedEdgeAttribute('businessAlreadyDone', false),
+					no: () => pathHasProhibitedEdgeAttribute('businessAlreadyDone', true),
+					all: () => false
+				};
+
+				const shouldExcludeRouteByHadBusiness = filterByHadBusinessMap[ratingHadBusinessFilter];
+
+				if (shouldExcludeRouteByHadBusiness()) {
+					return false;
 				}
 
 				return true;
@@ -239,7 +280,7 @@
 				},
 				target: (displayName) => (displayName ? `${displayName} (Target)` : '(Target)'),
 				common: (displayName) => displayName || 'Unknown (No profile name)'
-				} as Record<NodeDataType, (displayName?: string) => string>;
+			} as Record<NodeDataType, (displayName?: string) => string>;
 
 			const displayNameGen = displayNameFormatMap[node.type];
 
@@ -296,7 +337,7 @@
 		clearOldEdges();
 	}
 
-	$: ratingFilter, render();
+	$: ratingScoreFilter, ratingHadBusinessFilter, render();
 
 	interface HoverWidths {
 		width: number;
