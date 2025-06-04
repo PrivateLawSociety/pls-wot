@@ -212,25 +212,44 @@ public key: ${pubkey}`
 export const profilesMetadata = writable<Record<string, Event>>({});
 export const getProfileMetadata = async (publicKey: string): Promise<Event | null> => {
 	try {
+		async function queryMetadata() {
+			const metadataEvent = await relayPool.get(relayList, {
+				kinds: [Metadata],
+				authors: [publicKey],
+				limit: 1
+			});
+
+			if (metadataEvent) {
+				const olderProfile = get(profilesMetadata)[publicKey];
+
+				const olderCreatedAt = olderProfile?.created_at || 0;
+
+				if (olderCreatedAt < metadataEvent?.created_at) {
+					profilesMetadata.update((profiles) => {
+						profiles[publicKey] = metadataEvent;
+
+						return profiles;
+					});
+				}
+			}
+
+			const profileMetadata = get(profilesMetadata)[publicKey];
+
+			return profileMetadata;
+		}
+
 		const profiles = get(profilesMetadata);
-		if (profiles[publicKey]) {
-			return profiles[publicKey];
+
+		const olderProfile = profiles[publicKey];
+
+		if (olderProfile) {
+			// It ensures that the latest
+			queryMetadata();
+
+			return olderProfile;
 		}
 
-		const metadataEvent = await relayPool.get(relayList, {
-			kinds: [Metadata],
-			authors: [publicKey],
-			limit: 1
-		});
-
-		if (metadataEvent) {
-			profilesMetadata.update((profiles) => ({
-				...profiles,
-				[publicKey]: metadataEvent
-			}));
-		}
-
-		return metadataEvent;
+		return await queryMetadata();
 	} catch (error) {
 		console.error('Unable get profile metadata', error);
 		return null;
