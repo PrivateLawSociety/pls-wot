@@ -10,12 +10,6 @@
 		type RatingFilterScoreType
 	} from './types';
 	import 'vis-network/styles/vis-network.css';
-
-	/*
-	TODO:
-	- Isolate renderization layer and data layer
-	*/
-
 	import {
 		getProfileMetadata,
 		nostrAuth,
