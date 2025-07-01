@@ -1,38 +1,23 @@
-# create-svelte
+# Web of Trust - Private Law Society
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/main/packages/create-svelte).
+[**[🇧🇷] Versão em português: LEIAME.md**](LEIAME.md)
 
-## Creating a project
+## TL;DR
 
-If you're seeing this, you've probably already done this step. Congrats!
+**Web of Trust (WoT)** is a core component of the **Private Law Society (PLS)**, designed to create a decentralized and trustworthy reputation network among parties involved in private contracts and disputes. WoT allows participants to assess trust in other users based on past interactions and action history. By using cryptographic pseudonymous identities, WoT ensures that both arbitrators and participants have their reliability verified in a transparent and auditable manner.
 
-```bash
-# create a new project in the current directory
-npm create svelte@latest
+Trust is built through subjective ratings that are recorded publicly, enabling other participants to decide who they want to enter into agreements with or choose as arbitrators. The Web of Trust is crucial for ensuring the integrity and impartiality of the dispute resolution process within PLS, ensuring that all parties involved in private contracts act in good faith and with commitment.
 
-# create a new project in my-app
-npm create svelte@latest my-app
-```
+## Useful links
 
-## Developing
+[Join the Discord server here](https://discord.gg/PNE3PZTUNz)
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+[PLS Youtube channel](https://www.youtube.com/@privatelawsociety)
 
-```bash
-npm run dev
+[PLS X page](https://x.com/PrivateLawSoc)
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
+[PLS Nostr page](https://njump.me/npub1p79dx59d5gctllar73cqnucqft89gpkfmydxj4mmk2jj69s7hn3sfjatxx)
 
-## Building
+[Hosted website for the MVP](https://pls-wot.vercel.app/)
 
-To create a production version of your app:
-
-```bash
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
+[🇧🇷] [Podcast episode about PLS](https://www.youtube.com/watch?v=NGx7h9kpPE8)
