@@ -43,23 +43,32 @@
 		</div>
 
 		{#if $nostrAuth?.pubkey}
-			<div class="flex items-center gap-4 px-2">
-				<ProfileAvatar source={profileMetadata?.picture} alt={username} />
-				<div class="font-medium text-white">
-					<div>{username || ''}</div>
-					<div class="group relative">
-						<span class="block max-w-24 text-sm text-gray-400">
-							{`${profileMetadata?.npub.slice(0, 5)}...${profileMetadata?.npub.slice(-5)}`}
-						</span>
+		<div class="relative">
+			<a
+				href="/keys"
+				class="flex cursor-pointer items-center gap-4 rounded-lg px-2 py-2 transition-colors hover:bg-gray-700/50"
+			>
+			<div class="flex items-center gap-4 px-2 relative">
+					<div class="w-10">
+						<ProfileAvatar source={profileMetadata?.picture} alt={username} />
+					</div>
+					<div class="font-medium text-white">
+						<div>{username || ''}</div>
+						<div class="group relative">
+							<span class="block max-w-24 text-sm text-gray-400">
+								{`${profileMetadata?.npub.slice(0, 5)}...${profileMetadata?.npub.slice(-5)}`}
+							</span>
 
-						<span
-							class="absolute right-0 top-full z-10 hidden whitespace-nowrap rounded-md border border-white bg-gray-800 p-2 text-sm text-white group-hover:block"
-						>
-							{profileMetadata?.npub}
-						</span>
+							<span
+								class="absolute right-0 top-full z-10 hidden whitespace-nowrap rounded-md border border-white bg-gray-800 p-2 text-sm text-white group-hover:block"
+							>
+								{profileMetadata?.npub}
+							</span>
+						</div>
 					</div>
 				</div>
-			</div>
+			</a>
+		</div>
 		{/if}
 	</div>
 </div>
