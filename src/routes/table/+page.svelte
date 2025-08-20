@@ -217,6 +217,17 @@
 
 		return download('ratings.json', JSON.stringify(filteredRatingsEvents, null, '\t'));
 	};
+
+	let expandedItems = new Set();
+
+	function toggleExpanded(id) {
+		if (expandedItems.has(id)) {
+			expandedItems.delete(id);
+		} else {
+			expandedItems.add(id);
+		}
+		expandedItems = expandedItems;
+	}
 </script>
 
 <ZapModal bind:this={ZapModalComponent} />
@@ -388,7 +399,21 @@
 					</td>
 					<td>{rating.score ? '✅' : '❌'}</td>
 					<td>{rating.businessAlreadyDone ? '✅' : '❌'}</td>
-					<td>{rating.description}</td>
+					<td class="max-w-xl">
+						<div class="break-words">
+							<span class={expandedItems.has(rating.eventId) ? '' : 'line-clamp-3'}>
+								{rating.description}
+							</span>
+							{#if rating.description.length > 250}
+								<button
+									on:click={() => toggleExpanded(rating.eventId)}
+									class="ml-1 text-sm text-orange-500 hover:text-white"
+								>
+									{expandedItems.has(rating.eventId) ? 'Show less' : 'Show more'}
+								</button>
+							{/if}
+						</div>
+					</td>
 					<td>
 						{#if rating.from.lud16}
 							<div class="p-2">
