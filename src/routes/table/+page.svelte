@@ -237,7 +237,7 @@
 
 	<div class="flex w-full flex-wrap justify-center gap-4">
 		<div class="flex flex-col">
-			<Label for="filterRating" class="font-semibold">Filter by Rating:</Label>
+			<Label for="filterRating" class="font-semibold min-h-[25px]">Filter by Rating:</Label>
 			<Select
 				id="filterRating"
 				bind:value={filterRating}
@@ -247,12 +247,12 @@
 					{ value: 'negative', name: '❌ Negative' }
 				]}
 				class="rounded border border-gray-300 bg-white px-2 py-1 text-black
-				       transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+				       transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[33px]"
 			/>
 		</div>
 
 		<div class="flex flex-col">
-			<Label for="filterBusiness" class="font-semibold">Filter by Had Business:</Label>
+			<Label for="filterBusiness" class="font-semibold min-h-[25px]">Filter by Had Business:</Label>
 			<Select
 				id="filterBusiness"
 				bind:value={filterBusiness}
@@ -262,31 +262,31 @@
 					{ value: 'no', name: '❌ No' }
 				]}
 				class="rounded border border-gray-300 bg-white px-2 py-1 text-black
-				       transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+				       transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[33px]"
 			/>
 		</div>
 
 		<div class="flex flex-col">
-			<Label for="filterFrom" class="font-semibold">Filter by Who Rated:</Label>
+			<Label for="filterFrom" class="font-semibold min-h-[25px]">Filter by Who Rated:</Label>
 			<Input
 				id="filterFrom"
 				bind:value={filterFrom}
 				placeholder="Enter Rater Key"
 				autocomplete="off"
 				class="rounded border border-gray-300 bg-white px-2 py-1 text-black
-				       transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+				       transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[33px]"
 			/>
 		</div>
 
 		<div class="flex flex-col">
-			<Label for="filterTo" class="font-semibold">Filter by Who Was Rated:</Label>
+			<Label for="filterTo" class="font-semibold min-h-[25px]">Filter by Who Was Rated:</Label>
 			<Input
 				id="filterTo"
 				bind:value={filterTo}
 				placeholder="Enter Rated Key"
 				autocomplete="off"
 				class="rounded border border-gray-300 bg-white px-2 py-1 text-black
-				       transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+				       transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[33px]"
 			/>
 		</div>
 
