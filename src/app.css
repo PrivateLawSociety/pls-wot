@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-	@apply bg-slate-800 text-white;
+	@apply bg-wot_blue-50 text-white;
 }
 
 input {
