@@ -1,15 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { DataSet } from 'vis-data';
-	import { Network, type Node, type Edge } from 'vis-network';
+	import { type Edge, Network, type Node } from 'vis-network';
 	import type Graph from 'graphology';
-	import type {
-		RatingFilterHadBusinessType,
-		EdgeData,
-		NodeData,
-		NodeDataType,
-		RatingFilterScoreType
-	} from './types';
+	import type { EdgeData, NodeData, NodeDataType, RatingFilterHadBusinessType, RatingFilterScoreType } from './types';
 	import { nip19 } from 'nostr-tools';
 	import { toasts } from 'svelte-toasts';
 	import { allSimplePaths } from 'graphology-simple-path';
@@ -510,4 +504,4 @@
 	});
 </script>
 
-<div bind:this={graphContainer} class="w-full flex-1 bg-slate-400" />
+<div bind:this={graphContainer} class="h-full mx-5 mb-5 bg-white border-wot_blue-100 border-2 rounded-md" />

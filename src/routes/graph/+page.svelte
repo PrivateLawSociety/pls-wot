@@ -1,10 +1,10 @@
 <script lang="ts">
 	import Graph from 'graphology';
 	import {
-		isRatingFilterHadBusiness,
-		isRatingFilterScore,
 		type EdgeData,
 		type GraphRating,
+		isRatingFilterHadBusiness,
+		isRatingFilterScore,
 		type NodeData,
 		type RatingFilterHadBusinessType,
 		type RatingFilterScoreType
@@ -14,9 +14,9 @@
 		getProfileMetadata,
 		nostrAuth,
 		parseProfileFromJsonString,
+		type ProfileType,
 		relayList,
-		relayPool,
-		type ProfileType
+		relayPool
 	} from '$lib/nostr';
 	import type { SubCloser } from 'nostr-tools/abstract-pool';
 	import { ReviewEvent } from '$lib';
@@ -211,11 +211,13 @@
 		fromTarget: boolean;
 	}
 
-	async function subscribeRatingEvents({
-		depth,
-		originalPubkey,
-		fromTarget
-	}: SubscribeRatingEventsParams) {
+	async function subscribeRatingEvents(
+		{
+			depth,
+			originalPubkey,
+			fromTarget
+		}: SubscribeRatingEventsParams
+	) {
 		firstSubscriptionEvent = false;
 		clearGraph();
 
@@ -226,12 +228,14 @@
 			relatedIsParent?: boolean;
 		}
 
-		async function startEventHandling({
-			pubkey,
-			currentDepth,
-			relatedRating,
-			relatedIsParent
-		}: StartEventHandlingParams): Promise<GraphRating[]> {
+		async function startEventHandling(
+			{
+				pubkey,
+				currentDepth,
+				relatedRating,
+				relatedIsParent
+			}: StartEventHandlingParams
+		): Promise<GraphRating[]> {
 			const baseRatings: GraphRating[] = [];
 
 			const subscription =
@@ -409,11 +413,14 @@
 		firstSubscriptionEvent: boolean;
 	}
 
-	async function renewSubscriptions({
-		pubkey,
-		targetPubkey,
-		firstSubscriptionEvent
-	}: RenewSubscriptionsParams) {
+	async function renewSubscriptions(
+		{
+			pubkey,
+			targetPubkey,
+			firstSubscriptionEvent
+		}
+		: RenewSubscriptionsParams
+	) {
 		const originalPubkey = pubkey || targetPubkey;
 
 		if (!originalPubkey) return;
@@ -510,16 +517,18 @@
 	}
 </script>
 
-<div class="flex h-full w-full flex-col overflow-hidden">
+<div class="flex h-full w-full flex-col">
 	<div class="flex flex-col items-center gap-8 p-6">
 		<div class="flex w-full flex-wrap items-center justify-center gap-4">
 			<div class="flex flex-col">
-				<Label for="filterFrom" class="font-semibold"
-					>Main rater npub {userPubkey && pubkey === userPubkey ? '(You)' : ''}</Label
-				>
+				<Label for="filterFrom" class="font-semibold pb-1 text-white" color="none">
+					Filter by who rated {userPubkey && pubkey === userPubkey ? '(You)' : ''}:
+				</Label>
 				<Input
+					color="none"
+					class="bg-white text-wot_blue-50 border-wot_blue-100 border-2 focus:border-wot_blue-100 focus:border-2"
 					id="filterFrom"
-					placeholder="Enter main rater npub"
+					placeholder="Enter rater npub"
 					bind:value={npub}
 					autocomplete="off"
 				/>
@@ -531,10 +540,14 @@
 			</div>
 
 			<div class="flex flex-col">
-				<Label for="filterTo">Target rated npub</Label>
+				<Label for="filterTo" class="font-semibold pb-1 text-white" color="none">
+					Filter by who was rated:
+				</Label>
 				<Input
+					color="none"
+					class="bg-white text-wot_blue-50 border-wot_blue-100 border-2"
 					id="filterTo"
-					placeholder="Enter target npub"
+					placeholder="Enter rated npub"
 					bind:value={targetNpub}
 					autocomplete="off"
 				/>
@@ -546,41 +559,59 @@
 			</div>
 
 			<div class="flex flex-col">
-				<Label for="filterReview">Filter ratings type</Label>
+				<Label for="filterReview" class="font-semibold pb-1 text-white" color="none">
+					Filter by ratings:
+				</Label>
 				<div class="flex flex-row items-center gap-x-3">
 					<Select
+						defaultClass="bg-white text-wot_blue-50 border-wot_blue-100 border-2 rounded-lg focus:border-wot_blue-100 focus:border-2"
 						id="filterReview"
 						bind:value={ratingScoreFilter}
 						items={[
 							{ value: 'all', name: 'All' },
-							{ value: 'positive', name: '✅ Positive' },
-							{ value: 'negative', name: '❌ Negative' }
+							{ value: 'positive', name: 'Positive' },
+							{ value: 'negative', name: 'Negative' }
 						]}
 					/>
 				</div>
 			</div>
 
 			<div class="flex flex-col">
-				<Label for="filterReview">Filter by business already done</Label>
+				<Label for="filterReview" class="font-semibold pb-1 text-white" color="none">
+					Filter by had business:
+				</Label>
 				<div class="flex flex-row items-center gap-x-3">
 					<Select
+						defaultClass="bg-white text-wot_blue-50 border-wot_blue-100 border-2 rounded-lg focus:border-wot_blue-100 focus:border-2"
 						id="filterReview"
 						bind:value={ratingHadBusinessFilter}
 						items={[
 							{ value: 'all', name: 'All' },
-							{ value: 'yes', name: '✅ Yes' },
-							{ value: 'no', name: '❌ No' }
+							{ value: 'yes', name: 'Yes' },
+							{ value: 'no', name: 'No' }
 						]}
 					/>
 				</div>
 			</div>
 
 			<div class="flex flex-col">
-				<Checkbox bind:checked={physicsEnabled}>Physics enabled</Checkbox>
+				<Label class="flex items-center gap-1 text-white" color="none">
+					<Checkbox
+						bind:checked={physicsEnabled}
+						class="text-wot_blue-100"
+					/>
+					Physics enabled
+				</Label>
 			</div>
 
 			<div class="flex flex-col">
-				<Button on:click={() => copyLinkToClipboard()}>Share this view</Button>
+				<Button
+					on:click={() => copyLinkToClipboard()}
+					class="bg-wot_blue-100"
+					color="none"
+				>
+					Share this view
+				</Button>
 			</div>
 		</div>
 	</div>
