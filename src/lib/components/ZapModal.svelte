@@ -128,13 +128,13 @@
 	></button>
 
 	<div class="relative mx-auto w-full max-w-2xl p-4">
-		<div class="relative rounded-lg bg-gray-700 shadow-xl">
-			<div class="flex items-center justify-between border-b border-gray-600 p-4">
-				<h3 class="text-xl font-semibold text-white">Send Zap</h3>
+		<div class="relative rounded-lg bg-white text-black shadow-xl">
+			<div class="flex items-center justify-between border-b border-wot_blue-100 p-4">
+				<h3 class="text-xl font-semibold text-wot_blue-100">Send Zap</h3>
 
 				<button
 					type="button"
-					class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm text-white transition-colors hover:bg-gray-600"
+					class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm text-white transition-colors bg-wot_blue-100 hover:bg-wot_blue-50"
 					on:click={closeModal}
 					aria-label="Close modal"
 				>
@@ -165,7 +165,7 @@
 							</div>
 
 							<div class="flex items-center justify-center gap-2 px-4">
-								<span class="block text-nowrap text-sm font-bold text-white">Pre-image:</span>
+								<span class="block text-nowrap text-sm font-bold text-black">Pre-image:</span>
 								<input
 									type="text"
 									class="w-full rounded-lg bg-gray-700 p-2.5 text-sm text-white focus:ring-2"
@@ -177,8 +177,8 @@
 
 							<button
 								type="button"
-								class="w-full rounded-lg bg-gray-800 px-5 py-2 text-white transition-colors hover:bg-gray-600 focus:ring-2"
-								on:click={() => modalState.update((state) => initialState)}
+								class="w-full rounded-lg bg-gray-800 px-5 py-2 text-white transition-colors bg-wot_blue-100 hover:bg-wot_blue-50 focus:ring-2"
+								on:click={() => modalState.update((_state) => initialState)}
 							>
 								Return
 							</button>
@@ -233,26 +233,26 @@
 						<input type="hidden" name="destination" bind:value={$modalState.destination} required />
 
 						<div class="space-y-2">
-							<label for="amount" class="block text-sm text-white"> Amount: </label>
+							<label for="amount" class="block text-sm font-semibold text-wot_blue-100"> Amount: </label>
 							<input
 								id="amount"
 								name="amount"
 								type="number"
 								bind:value={$modalState.amount}
-								class="w-full rounded-lg border border-gray-600 bg-gray-700 p-2.5 text-sm text-white focus:ring-2"
+								class="w-full rounded-lg border border-wot_blue-100 bg-white p-2.5 text-sm text-black focus:ring-2"
 								min="1"
 								required
 							/>
 						</div>
 
 						<div class="space-y-2">
-							<label for="message" class="block text-sm text-white"> Message: </label>
+							<label for="message" class="block text-sm font-semibold text-wot_blue-100"> Message: </label>
 							<textarea
 								id="message"
 								name="message"
 								bind:value={$modalState.message}
 								rows="3"
-								class="w-full resize-none rounded-lg border border-gray-600 bg-gray-700 p-2.5 text-sm text-white focus:ring-2"
+								class="w-full resize-none rounded-lg border border-wot_blue-100 bg-white p-2.5 text-sm text-black focus:ring-2"
 								placeholder="Leave a message..."
 							></textarea>
 						</div>
@@ -260,7 +260,7 @@
 						<button
 							bind:this={buttonSubmit}
 							type="submit"
-							class="w-full rounded-lg bg-orange-500 px-5 py-2 text-sm text-white transition-colors hover:bg-orange-600 focus:ring-2 focus:ring-orange-300 disabled:border disabled:border-orange-500 disabled:bg-transparent disabled:text-orange-500"
+							class="w-full rounded-lg bg-wot_blue-100 px-5 py-2 text-sm text-white transition-colors hover:bg-wot_blue-50 focus:ring-2 focus:ring-wot_blue-50 disabled:border disabled:border-gray-500 disabled:bg-transparent disabled:text-wot_blue-50"
 						>
 							{buttonSubmit?.disabled ? 'Creating Invoice...' : 'Create Invoice'}
 						</button>

@@ -23,7 +23,7 @@
 	</div>
 {:else}
 	<img
-		class={`h-${size} w-${size} rounded-full object-contain`}
+		class={`h-${size} w-${size} rounded-full object-cover`}
 		src={source}
 		{alt}
 		on:error={() => (imageError = true)}
