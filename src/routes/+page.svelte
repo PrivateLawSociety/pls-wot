@@ -1,29 +1,31 @@
 <script>
 	import LoginPerson from '$lib/components/LoginPerson.svelte';
-	import { Button, P } from 'flowbite-svelte';
+	import { Button } from 'flowbite-svelte';
 	import { nostrAuth } from '$lib/nostr';
+	import Header from '$lib/components/Header.svelte';
 </script>
 
-<div class="flex h-full flex-col items-center justify-center gap-4 p-4">
-	<div class="flex flex-col justify-center">
-		<P size="4xl" weight="normal">PLS Web Of Trust</P>
+<Header />
+<div class="flex h-full flex-col items-center justify-center gap-4 text-lg ">
+	<div class="flex flex-col gap-4 bg-gray-200 px-6 py-4 rounded-xl shadow-sm">
+		{#if $nostrAuth?.pubkey}
+			<a href="/keys">
+				<LoginPerson divClass="text-black" pubkey={$nostrAuth.pubkey} />
+			</a>
+			<Button href="/rate" color="none" class="text-black hover:bg-wot_blue-100 hover:text-white md:w-64 w-48">
+				Give rating
+			</Button>
+		{:else}
+			<LoginPerson pubkey="" divClass="text-black" size={20} />
+			<Button href="/login" color="none" class="text-black hover:bg-wot_blue-100 hover:text-white md:w-64 w-48">
+				Login
+			</Button>
+		{/if}
+		<Button href="/graph" color="none" class="text-black hover:bg-wot_blue-100 hover:text-white md:w-64 w-48">
+			View graph
+		</Button>
+		<Button href="/table" color="none" class="text-black hover:bg-wot_blue-100 hover:text-white md:w-64 w-48">
+			Ratings table
+		</Button>
 	</div>
-	{#if $nostrAuth?.pubkey}
-		<a href="/keys">
-			<LoginPerson pubkey={$nostrAuth.pubkey} />
-		</a>
-		<a href="/rate">
-			<Button class="m:w-48 w-48">Give rating</Button>
-		</a>
-	{:else}
-		<a href="/login">
-			<Button class="m:w-64 w-48">Login</Button>
-		</a>
-	{/if}
-	<a href="/graph">
-		<Button class="m:w-48 w-48">View graph</Button>
-	</a>
-	<a href="/table">
-		<Button class="m:w-64 w-48">Ratings table</Button>
-	</a>
 </div>

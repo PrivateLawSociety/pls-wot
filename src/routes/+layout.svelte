@@ -10,7 +10,7 @@
 </ToastContainer>
 
 <div class="flex h-screen flex-col">
-	{#if $page.route.id != '/'}
+	{#if $page.route.id !== '/'}
 		<Header/>
 	{/if}
 
