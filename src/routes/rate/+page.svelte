@@ -2,13 +2,13 @@
 	import { ReviewEvent } from '$lib';
 
 	import { getPublicKey } from 'nostr-tools/pure';
-	import { broadcastToNostr } from '$lib/nostr';
+	import { broadcastToNostr, nostrAuth } from '$lib/nostr';
 	import { decode, npubEncode } from 'nostr-tools/nip19';
 	import { goto } from '$app/navigation';
-	import { nostrAuth } from '$lib/nostr';
-	import { Button, Input, Label, Textarea, Radio } from 'flowbite-svelte';
+	import { Button, Input, Label, Radio, Textarea } from 'flowbite-svelte';
 
 	import { page } from '$app/state';
+
 	const npub = page.url.searchParams.get('npub');
 
 	function parsePubKey(str: string) {
@@ -23,7 +23,8 @@
 				if (buf.length !== 32) return;
 
 				return buf;
-			} catch {}
+			} catch {
+			}
 		}
 	}
 
@@ -137,53 +138,81 @@
 	class="flex h-full flex-col items-center justify-center gap-4 pt-4"
 >
 	{#if $nostrAuth?.pubkey}
-		<Label class="flex w-1/2 flex-col">
-			Your npub
-			<code class="font-bold">{npubEncode($nostrAuth.pubkey)}</code>
-		</Label>
+		<div class="flex w-1/2 flex-col">
+			<Label class="font-semibold pb-1 text-white" color="none">
+				Your npub:
+			</Label>
+			<pre class="font-bold text-white">{npubEncode($nostrAuth.pubkey)}</pre>
+		</div>
 	{/if}
 
-	<Label class="flex w-1/2 flex-col">
-		Other person pubkey
+	<div class="flex w-1/2 flex-col">
+		<Label class="font-semibold pb-1 text-white" color="none">
+			Other person pubkey:
+		</Label>
 		{#if npub}
-			<Input class="border-2" bind:value={otherPersonPubKey} type="text" readonly />
+			<Input
+				color="none"
+				class="bg-white text-black border-wot_blue-100 border-2 focus:border-wot_blue-100 focus:border-2"
+				bind:value={otherPersonPubKey}
+				type="text"
+				readonly
+			/>
 		{:else}
-			<Input class="border-2" bind:value={otherPersonPubKey} type="text" />
+			<Input
+				color="none"
+				class="bg-white text-black border-wot_blue-100 border-2 focus:border-wot_blue-100 focus:border-2"
+				bind:value={otherPersonPubKey}
+				type="text"
+			/>
 		{/if}
-	</Label>
+	</div>
 
 	<div class="flex w-1/2 flex-col">
-		<p>What rating do you give to this person?</p>
+		<Label class="font-semibold pb-1 text-white" color="none">
+			What rating do you give to this person?
+		</Label>
 		<div class="flex gap-4">
-			<Label class="flex items-center gap-1">
-				<Radio bind:group={score} value={1} />
-				positive
+			<Label class="flex items-center gap-1 text-white" color="none">
+				<Radio class="text-wot_blue-50 border-white border-2 rounded-full group-checked:bg-white" bind:group={score}
+							 value={1} />
+				Positive
 			</Label>
-			<Label class="flex items-center gap-1">
-				<Radio bind:group={score} value={0} />
-				negative
+			<Label class="flex items-center gap-1 text-white" color="none">
+				<Radio class="text-wot_blue-50 border-white border-2 rounded-full" bind:group={score} value={0} />
+				Negative
 			</Label>
 		</div>
 	</div>
 
 	<div class="flex w-1/2 flex-col">
-		<p>Have you ever done business with this person?</p>
+		<Label class="font-semibold pb-1 text-white" color="none">
+			Have you ever done business with this person?
+		</Label>
 		<div class="flex gap-4">
-			<Label class="flex items-center gap-1">
-				<Radio bind:group={businessAlreadyDone} value={1} />
-				yes
+			<Label class="flex items-center gap-1 text-white" color="none">
+				<Radio bind:group={businessAlreadyDone} value={1} class="text-wot_blue-50 border-white border-2 rounded-full" />
+				Yes
 			</Label>
-			<Label class="flex items-center gap-1">
-				<Radio bind:group={businessAlreadyDone} value={0} />
-				no
+			<Label class="flex items-center gap-1 text-white" color="none">
+				<Radio bind:group={businessAlreadyDone} value={0} class="text-wot_blue-50 border-white border-2 rounded-full" />
+				No
 			</Label>
 		</div>
 	</div>
 
-	<Label class="flex w-1/2 flex-col">
-		Rating description
-		<Textarea rows={6} class="border-2" bind:value={ratingDescription} />
-	</Label>
+	<div class="flex w-1/2 flex-col">
+		<Label class="font-semibold pb-1 text-white" color="none">
+			Rating description
+		</Label>
+		<!-- TODO: post flowbite update, change this to tailwind styling -->
+		<Textarea
+			color="none"
+			style="background:#FFFFFF;border: 2px solid #4373D1;color: #000000;"
+			rows={6}
+			bind:value={ratingDescription}
+		/>
+	</div>
 
-	<Button type="submit" class="m:w-64 w-48">Create rating</Button>
+	<Button type="submit" class="w-1/2 bg-wot_blue-100" color="none">Create rating</Button>
 </form>
