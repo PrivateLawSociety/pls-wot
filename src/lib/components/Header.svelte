@@ -38,8 +38,6 @@
 	<span class="flex items-center justify-around gap-6 w-100">
 		<a href="/" class="cursor-pointer hover:underline underline-offset-2">Home</a>
 		<a href="/guides" class="cursor-pointer hover:underline underline-offset-2">Guides</a>
-		<!--{#if $nostrAuth?.pubkey}-->
 			<LoginPerson pubkey={$nostrAuth?.pubkey} hideName />
-		<!--{/if}-->
 	</span>
 </div>
