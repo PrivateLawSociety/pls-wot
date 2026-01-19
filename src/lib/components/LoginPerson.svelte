@@ -33,6 +33,6 @@
 <a href="/keys" class="flex flex-col items-center justify-center {divClass}">
 	<ProfileAvatar source={profileMetadata?.picture} alt={username} size={size} />
 	{#if !hideName}
-		<p title={username} class="w-fit text-center mt-2">{username}</p>
+		<p title={username} class="w-20 break-words text-center mt-2">{username}</p>
 	{/if}
 </a>

@@ -405,7 +405,7 @@
 							<div class="flex items-center justify-between">
 								<span class="text-black">Rating:</span>
 								{#if rating.score}
-									<p class="shrink-0 h-6 w-6" />
+									<span class="shrink-0 h-6 w-6" aria-hidden="true" />
 								{/if}
 								<span class="text-2xl">{rating.score ? '✅' : '❌'}</span>
 							</div>

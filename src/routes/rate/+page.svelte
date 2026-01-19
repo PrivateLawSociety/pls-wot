@@ -174,8 +174,11 @@
 		</Label>
 		<div class="flex gap-4">
 			<Label class="flex items-center gap-1 text-white" color="none">
-				<Radio class="text-wot_blue-50 border-white border-2 rounded-full group-checked:bg-white" bind:group={score}
-							 value={1} />
+				<Radio
+					class="text-wot_blue-50 border-white border-2 rounded-full group-checked:bg-white"
+					bind:group={score}
+					value={1}
+				/>
 				Positive
 			</Label>
 			<Label class="flex items-center gap-1 text-white" color="none">
