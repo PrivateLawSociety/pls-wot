@@ -25,7 +25,7 @@
 			View graph
 		</Button>
 		<Button href="/table" color="none" class="text-black hover:bg-wot_blue-100 hover:text-white md:w-64 w-48">
-			Ratings table
+			Ratings
 		</Button>
 	</div>
 </div>

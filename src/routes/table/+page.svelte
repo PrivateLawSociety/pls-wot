@@ -233,8 +233,6 @@
 <ZapModal bind:this={ZapModalComponent} />
 
 <div class="flex flex-col items-center gap-8 mt-4">
-	<h1 class="text-2xl font-bold">Ratings table</h1>
-
 	<div class="flex w-full flex-wrap justify-center gap-4">
 		<div class="flex flex-col gap-1">
 			<Label for="filterRating" class="font-semibold text-white" color="none">Filter by Rating:</Label>
@@ -343,7 +341,7 @@
 								<ProfileAvatar source={rating.from.picture} />
 							</a>
 							<div class="flex-1">
-								<div class="font-medium text-white">
+								<div class="font-medium text-black">
 									{rating.from.display_name || rating.from.name || 'Anonymous'}
 								</div>
 								<div class="group relative">
@@ -371,7 +369,7 @@
 								<ProfileAvatar source={rating.to.picture} />
 							</a>
 							<div class="flex-1">
-								<div class="font-medium text-white">
+								<div class="font-medium text-black">
 									{rating.to.display_name || rating.to.name || 'Anonymous'}
 								</div>
 								<div class="group relative">
