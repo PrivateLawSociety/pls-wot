@@ -114,7 +114,7 @@
 		// relayPool.publish(relayList, event)
 		broadcastToNostr(event);
 
-		if (confirm('Event published. Would you like to see the ratings table?')) {
+		if (confirm('Event published. Would you like to see the ratings?')) {
 			goto('/table');
 		}
 
