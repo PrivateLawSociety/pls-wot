@@ -22,7 +22,8 @@ export let relayList = [
 	'wss://nostr.fmt.wiz.biz',
 	'wss://offchain.pub',
 	'wss://relay.current.fyi',
-	'wss://nos.lol'
+	'wss://nos.lol',
+	'wss://relay.felipenegrelle.com.br',
 ];
 
 export interface Rating {
